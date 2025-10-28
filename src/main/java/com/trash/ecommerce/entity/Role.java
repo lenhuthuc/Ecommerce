@@ -1,5 +1,6 @@
 package com.trash.ecommerce.entity;
 
+import java.util.HashSet;
 import java.util.Set;
 
 import jakarta.persistence.CascadeType;
@@ -28,7 +29,7 @@ public class Role {
         cascade = {CascadeType.PERSIST, CascadeType.MERGE, 
                 CascadeType.DETACH, CascadeType.REFRESH},
         mappedBy = "roles")
-    private Set<Users> users;
+    private Set<Users> users = new HashSet<>();
 
     public Role(Long id, String roleName, Set<Users> users) {
         this.id = id;
@@ -59,6 +60,4 @@ public class Role {
     public void setUsers(Set<Users> users) {
         this.users = users;
     }
-
-    
 }

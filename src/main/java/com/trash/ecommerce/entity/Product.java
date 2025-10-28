@@ -100,6 +100,4 @@ public class Product {
     public void setInvoiceItems(Set<InvoiceItem> invoiceItems) {
         this.invoiceItems = invoiceItems;
     }
-
-    // getters & setters
 }
