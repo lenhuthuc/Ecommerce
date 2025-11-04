@@ -10,5 +10,5 @@ import lombok.NoArgsConstructor;
 public class UserLoginResponseDTO {
     private String token;
     private String tokenType;
-    private Long expiresIn;
+    private java.util.Date expiresIn;
 }

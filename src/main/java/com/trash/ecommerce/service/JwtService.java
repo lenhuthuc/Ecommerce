@@ -53,6 +53,10 @@ public class JwtService {
         return extractClaim(token, Claims::getSubject);
     }
 
+    public Date extractExspiration(String token) {
+        return extractClaim(token, Claims::getExpiration);
+    }
+
     public <T> T extractClaim(String token, Function <Claims, T> claimResolve) {
         Claims claims = extractAllClaims(token);
         return claimResolve.apply(claims);

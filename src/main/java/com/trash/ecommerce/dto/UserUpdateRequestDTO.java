@@ -1,5 +1,9 @@
 package com.trash.ecommerce.dto;
 
+import java.util.Set;
+
+import com.trash.ecommerce.entity.PaymentMethod;
+
 import jakarta.validation.constraints.Email;
 import jakarta.validation.constraints.NotBlank;
 import jakarta.validation.constraints.Pattern;
@@ -21,4 +25,6 @@ public class UserUpdateRequestDTO {
         message = "Mật khẩu phải chứa ít nhất 1 chữ hoa, 1 chữ thường, 1 số và 1 ký tự đặc biệt"
     )
     private String password;
+    private String address;
+    private Set<PaymentMethod> paymentMethod;
 }

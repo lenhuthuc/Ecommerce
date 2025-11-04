@@ -84,6 +84,9 @@ public class Users implements UserDetails {
         this.invoices = invoices;
     }
 
+    public Users() {
+    }
+
     public Long getId() {
         return id;
     }
