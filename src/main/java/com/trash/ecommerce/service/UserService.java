@@ -4,6 +4,7 @@ import java.util.List;
 
 import com.trash.ecommerce.dto.UserLoginRequestDTO;
 import com.trash.ecommerce.dto.UserLoginResponseDTO;
+import com.trash.ecommerce.dto.UserProfileDTO;
 import com.trash.ecommerce.dto.UserRegisterRequestDTO;
 import com.trash.ecommerce.dto.UserRegisterResponseDTO;
 import com.trash.ecommerce.dto.UserResponseDTO;
@@ -11,10 +12,11 @@ import com.trash.ecommerce.dto.UserUpdateRequestDTO;
 import com.trash.ecommerce.entity.Users;
 
 public interface UserService {
-    public List<Users> findAllUser();
+    public List<Users> findAllUser(int noPage, int sizePage);
     public UserRegisterResponseDTO register(UserRegisterRequestDTO user);
     public UserLoginResponseDTO login(UserLoginRequestDTO user);
     public Users findUsersById(Long id);
-    public UserResponseDTO  updateUser(UserUpdateRequestDTO  user, Long id);
-    public void deleteUser(Long id);
+    public UserProfileDTO getOwnProfile(String token);
+    public UserResponseDTO  updateUser(UserUpdateRequestDTO  user, Long id, String token);
+    public void deleteUser(Long id, String token);
 }

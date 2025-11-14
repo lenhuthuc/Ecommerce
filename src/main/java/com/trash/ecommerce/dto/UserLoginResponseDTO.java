@@ -11,4 +11,5 @@ public class UserLoginResponseDTO {
     private String token;
     private String tokenType;
     private java.util.Date expiresIn;
+    private String message;
 }

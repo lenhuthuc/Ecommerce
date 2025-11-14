@@ -31,8 +31,9 @@ public class JwtService {
 
     }
 
-    public String generateToken(String email) {
+    public String generateToken(String email, Long id) {
         Map<String, Object> claims = new HashMap<>();
+        claims.put("id", id);
         return Jwts.builder()
                     .claims()
                     .add(claims)
@@ -49,6 +50,11 @@ public class JwtService {
         return Keys.hmacShaKeyFor(keyBytes);
     }
 
+    public Long extractId(String token) {
+        Claims claims = extractAllClaims(token);
+        Long id = claims.get("id", Long.class);
+        return id;
+    }
     public String extractUsername(String token) {
         return extractClaim(token, Claims::getSubject);
     }
