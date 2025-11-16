@@ -2,6 +2,7 @@ package com.trash.ecommerce.entity;
 
 import java.util.Collection;
 import java.util.HashSet;
+import java.util.List;
 import java.util.Set;
 import java.util.stream.Collectors;
 
@@ -22,8 +23,14 @@ import jakarta.persistence.ManyToMany;
 import jakarta.persistence.OneToMany;
 import jakarta.persistence.OneToOne;
 import jakarta.persistence.Table;
+import lombok.AllArgsConstructor;
+import lombok.Data;
+import lombok.NoArgsConstructor;
 
 @Entity
+@AllArgsConstructor
+@NoArgsConstructor
+@Data
 @Table(name = "users")
 public class Users implements UserDetails {
     @Id
@@ -72,84 +79,12 @@ public class Users implements UserDetails {
     )
     private Set<Invoice> invoices = new HashSet<>();
 
-    public Users(Long id, String email, String password, String address, Set<Role> roles,
-            Set<PaymentMethod> paymentMethods, Cart cart, Set<Invoice> invoices) {
-        this.id = id;
-        this.email = email;
-        this.password = password;
-        this.address = address;
-        this.roles = roles;
-        this.paymentMethods = paymentMethods;
-        this.cart = cart;
-        this.invoices = invoices;
-    }
-
-    public Users() {
-    }
-
-    public Long getId() {
-        return id;
-    }
-
-    public void setId(Long id) {
-        this.id = id;
-    }
-
-    public String getEmail() {
-        return email;
-    }
-
-    public void setEmail(String email) {
-        this.email = email;
-    }
-
-    public String getPassword() {
-        return password;
-    }
-
-    public void setPassword(String password) {
-        this.password = password;
-    }
-
-    public String getAddress() {
-        return address;
-    }
-
-    public void setAddress(String address) {
-        this.address = address;
-    }
-
-    public Set<Role> getRoles() {
-        return roles;
-    }
-
-    public void setRoles(Set<Role> roles) {
-        this.roles = roles;
-    }
-
-    public Set<PaymentMethod> getPaymentMethods() {
-        return paymentMethods;
-    }
-
-    public void setPaymentMethods(Set<PaymentMethod> paymentMethods) {
-        this.paymentMethods = paymentMethods;
-    }
-
-    public Cart getCart() {
-        return cart;
-    }
-
-    public void setCart(Cart cart) {
-        this.cart = cart;
-    }
-
-    public Set<Invoice> getInvoices() {
-        return invoices;
-    }
-
-    public void setInvoices(Set<Invoice> invoices) {
-        this.invoices = invoices;
-    }
+    @OneToMany(
+        fetch = FetchType.LAZY,
+        mappedBy = "user",
+        cascade = CascadeType.ALL
+    )
+    private List<Review> reviews;
 
     @Override
     public Collection<? extends GrantedAuthority> getAuthorities() {

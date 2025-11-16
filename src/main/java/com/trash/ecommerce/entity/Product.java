@@ -1,5 +1,6 @@
 package com.trash.ecommerce.entity;
 
+import java.util.List;
 import java.util.Set;
 
 import jakarta.persistence.CascadeType;
@@ -11,8 +12,14 @@ import jakarta.persistence.GenerationType;
 import jakarta.persistence.Id;
 import jakarta.persistence.OneToMany;
 import jakarta.persistence.Table;
+import lombok.AllArgsConstructor;
+import lombok.Data;
+import lombok.NoArgsConstructor;
 
 @Entity
+@AllArgsConstructor
+@NoArgsConstructor
+@Data
 @Table(name = "product")
 public class Product {
 
@@ -20,6 +27,8 @@ public class Product {
     @GeneratedValue(strategy = GenerationType.IDENTITY)
     private Long id;
 
+    @Column(nullable = false)
+    private String img;
     @Column(nullable = false)
     private String productName;
 
@@ -42,62 +51,10 @@ public class Product {
         mappedBy = "product"
     )
     private Set<InvoiceItem> invoiceItems;
-
-    public Product(Long id, String productName, Double price, Long quantity, Set<CartItem> cartItems,
-            Set<InvoiceItem> invoiceItems) {
-        this.id = id;
-        this.productName = productName;
-        this.price = price;
-        this.quantity = quantity;
-        this.cartItems = cartItems;
-        this.invoiceItems = invoiceItems;
-    }
-
-    public Long getId() {
-        return id;
-    }
-
-    public void setId(Long id) {
-        this.id = id;
-    }
-
-    public String getProductName() {
-        return productName;
-    }
-
-    public void setProductName(String productName) {
-        this.productName = productName;
-    }
-
-    public Double getPrice() {
-        return price;
-    }
-
-    public void setPrice(Double price) {
-        this.price = price;
-    }
-
-    public Long getQuantity() {
-        return quantity;
-    }
-
-    public void setQuantity(Long quantity) {
-        this.quantity = quantity;
-    }
-
-    public Set<CartItem> getCartItems() {
-        return cartItems;
-    }
-
-    public void setCartItems(Set<CartItem> cartItems) {
-        this.cartItems = cartItems;
-    }
-
-    public Set<InvoiceItem> getInvoiceItems() {
-        return invoiceItems;
-    }
-
-    public void setInvoiceItems(Set<InvoiceItem> invoiceItems) {
-        this.invoiceItems = invoiceItems;
-    }
+    @OneToMany(
+        fetch = FetchType.LAZY,
+        mappedBy = "product",
+        cascade = CascadeType.ALL
+    )
+    private List<Review> reviews;
 }

@@ -1,19 +1,15 @@
 package com.trash.ecommerce.service;
 
-import java.util.Collection;
 import java.util.List;
 import java.util.Set;
-import java.util.stream.Collector;
 import java.util.stream.Collectors;
 
 import org.springframework.data.domain.Page;
-import org.apache.catalina.core.ApplicationContext;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.data.domain.PageRequest;
 import org.springframework.security.authentication.AuthenticationManager;
 import org.springframework.security.authentication.UsernamePasswordAuthenticationToken;
 import org.springframework.security.core.Authentication;
-import org.springframework.security.core.authority.SimpleGrantedAuthority;
 import org.springframework.security.core.context.SecurityContextHolder;
 import org.springframework.security.crypto.password.PasswordEncoder;
 import org.springframework.stereotype.Service;
@@ -27,9 +23,7 @@ import com.trash.ecommerce.dto.UserRegisterResponseDTO;
 import com.trash.ecommerce.dto.UserResponseDTO;
 import com.trash.ecommerce.dto.UserUpdateRequestDTO;
 import com.trash.ecommerce.entity.Invoice;
-import com.trash.ecommerce.entity.Role;
 import com.trash.ecommerce.entity.Users;
-import com.trash.ecommerce.exception.FindingUserError;
 import com.trash.ecommerce.repository.UserRepository;
 
 @Service
