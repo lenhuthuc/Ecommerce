@@ -1,8 +1,8 @@
 package com.trash.ecommerce.entity;
 
-import jakarta.persistence.Column;
 import jakarta.persistence.EmbeddedId;
 import jakarta.persistence.Entity;
+import jakarta.persistence.FetchType;
 import jakarta.persistence.JoinColumn;
 import jakarta.persistence.ManyToOne;
 import jakarta.persistence.MapsId;
@@ -12,24 +12,21 @@ import lombok.Data;
 import lombok.NoArgsConstructor;
 
 @Entity
-@Table(name = "cart_items")
+@Table(name = "order_item")
+@Data
 @AllArgsConstructor
 @NoArgsConstructor
-@Data
-public class CartItem {
+public class OrderItem {
     @EmbeddedId
-    private CartItemId id;
+    private OrderItemId id;
 
-    @ManyToOne
-    @MapsId("cartId")
-    @JoinColumn(name = "cart_id")
-    private Cart cart;
+    @ManyToOne(fetch = FetchType.LAZY)
+    @MapsId("orderId")
+    @JoinColumn(name = "order_id")
+    private Order order;
 
-    @ManyToOne
+    @ManyToOne(fetch = FetchType.LAZY)
     @MapsId("productId")
     @JoinColumn(name = "product_id")
     private Product product;
-
-    @Column(nullable = false)
-    private Long quantity = 0;
 }

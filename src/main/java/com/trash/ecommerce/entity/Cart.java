@@ -11,9 +11,15 @@ import jakarta.persistence.JoinColumn;
 import jakarta.persistence.OneToMany;
 import jakarta.persistence.OneToOne;
 import jakarta.persistence.Table;
+import lombok.AllArgsConstructor;
+import lombok.Data;
+import lombok.NoArgsConstructor;
 
 @Entity
 @Table(name = "cart")
+@AllArgsConstructor
+@NoArgsConstructor
+@Data
 public class Cart {
 
     @Id
@@ -26,35 +32,4 @@ public class Cart {
 
     @OneToMany(mappedBy = "cart", cascade = CascadeType.ALL)
     private Set<CartItem> items;
-
-    public Cart(Long id, Users user, Set<CartItem> items) {
-        this.id = id;
-        this.user = user;
-        this.items = items;
-    }
-
-    public Long getId() {
-        return id;
-    }
-
-    public void setId(Long id) {
-        this.id = id;
-    }
-
-    public Users getUser() {
-        return user;
-    }
-
-    public void setUser(Users user) {
-        this.user = user;
-    }
-
-    public Set<CartItem> getItems() {
-        return items;
-    }
-
-    public void setItems(Set<CartItem> items) {
-        this.items = items;
-    }
-
 }

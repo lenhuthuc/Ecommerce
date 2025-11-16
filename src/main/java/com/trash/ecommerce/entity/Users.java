@@ -86,6 +86,12 @@ public class Users implements UserDetails {
     )
     private List<Review> reviews;
 
+    @OneToMany(
+        fetch = FetchType.LAZY,
+        mappedBy = "user",
+        cascade = CascadeType.ALL
+    )
+    private Set<Order> orders;
     @Override
     public Collection<? extends GrantedAuthority> getAuthorities() {
        return roles.stream()
