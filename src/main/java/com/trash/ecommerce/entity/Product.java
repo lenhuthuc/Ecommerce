@@ -40,8 +40,7 @@ public class Product {
 
     @OneToMany(
     fetch = FetchType.LAZY,
-    cascade = {CascadeType.PERSIST, CascadeType.MERGE, 
-                CascadeType.DETACH, CascadeType.REFRESH},   
+    cascade = CascadeType.ALL,   
     mappedBy = "product")
     private Set<CartItem> cartItems;
 

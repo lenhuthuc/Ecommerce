@@ -13,5 +13,5 @@ public interface ProductService {
     public ProductResponseDTO createProduct(ProductRequireDTO productRequireDTO);
     public ProductResponseDTO updateProduct(ProductRequireDTO productRequireDTO, Long id);
     public ProductResponseDTO deleteProductById(Long id);
-    public ProductResponseDTO addToCart(String token, Long productId);
+    public ProductResponseDTO addToCart(String token, Long productId, Long quantity);
 }

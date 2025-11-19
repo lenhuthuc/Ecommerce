@@ -22,8 +22,10 @@ import com.trash.ecommerce.dto.UserRegisterRequestDTO;
 import com.trash.ecommerce.dto.UserRegisterResponseDTO;
 import com.trash.ecommerce.dto.UserResponseDTO;
 import com.trash.ecommerce.dto.UserUpdateRequestDTO;
+import com.trash.ecommerce.entity.Cart;
 import com.trash.ecommerce.entity.Invoice;
 import com.trash.ecommerce.entity.Users;
+import com.trash.ecommerce.repository.CartRepository;
 import com.trash.ecommerce.repository.UserRepository;
 
 @Service
@@ -39,7 +41,8 @@ public class UserServiceImpl implements UserService {
     private AuthenticationManager auth;
     @Autowired
     private JwtService jwtService;
-
+    @Autowired
+    private CartRepository cartRepository;
     @Override
     public List<Users> findAllUser(int noPage, int sizePage) {
         PageRequest pageRequest = PageRequest.of(noPage, noPage);
@@ -59,6 +62,10 @@ public class UserServiceImpl implements UserService {
         tmpUser.setPassword(password);
         tmpUser.setRoles(Set.of(roleService.findRoleByName("USER")));
         userRepository.save(tmpUser);
+        Cart cart = new Cart();
+        cart.setUser(tmpUser);
+        cartRepository.save(cart);
+        tmpUser.setCart(cart);
         return new UserRegisterResponseDTO("Đăng kí thành công");
     }
 

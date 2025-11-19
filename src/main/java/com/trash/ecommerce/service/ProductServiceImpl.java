@@ -10,12 +10,17 @@ import org.springframework.stereotype.Service;
 import com.trash.ecommerce.dto.ProductDetailsResponseDTO;
 import com.trash.ecommerce.dto.ProductRequireDTO;
 import com.trash.ecommerce.dto.ProductResponseDTO;
+import com.trash.ecommerce.entity.Cart;
 import com.trash.ecommerce.entity.CartItem;
+import com.trash.ecommerce.entity.CartItemId;
 import com.trash.ecommerce.entity.InvoiceItem;
 import com.trash.ecommerce.entity.Product;
 import com.trash.ecommerce.entity.Review;
+import com.trash.ecommerce.entity.Users;
+import com.trash.ecommerce.exception.FindingUserError;
 import com.trash.ecommerce.exception.ProductFingdingException;
 import com.trash.ecommerce.repository.ProductRepository;
+import com.trash.ecommerce.repository.UserRepository;
 
 import jakarta.transaction.Transactional;
 
@@ -23,8 +28,12 @@ import jakarta.transaction.Transactional;
 public class ProductServiceImpl implements ProductService {
 
     @Autowired
-    ProductRepository productRepository;
+    private ProductRepository productRepository;
 
+    @Autowired
+    private JwtService jwtService;
+    @Autowired
+    private UserRepository userRepository;
     @Override
     public ProductDetailsResponseDTO findProductById(Long id) {
         ProductDetailsResponseDTO productDTO = new ProductDetailsResponseDTO();
@@ -115,6 +124,26 @@ public class ProductServiceImpl implements ProductService {
         }
         productRepository.delete(product);
         return new ProductResponseDTO("successful");
+    }
+
+    @Override
+    public ProductResponseDTO addToCart(String token, Long productId, Long quantity) {
+        Long userId = jwtService.extractId(token);
+        Users users = userRepository.findById(userId)
+                                        .orElseThrow(() -> new FindingUserError("user is not found"));
+        Cart cart = users.getCart();
+        Long cartId = cart.getId();
+        Product product = productRepository.findById(productId)
+                                        .orElseThrow(() -> new ProductFingdingException("product can't be found"));
+        CartItemId cartItemId = new CartItemId(cartId, productId);
+        CartItem cartItem = new CartItem();
+        cartItem.setId(cartItemId);
+        cartItem.setCart(cart);
+        cart.getItems().add(cartItem);
+        cartItem.setProduct(product);
+        product.getCartItems().add(cartItem);
+        cartItem.setQuantity(quantity);
+        return new ProductResponseDTO("Them san pham vao gio hang thanh cong !");
     }
 
 }
