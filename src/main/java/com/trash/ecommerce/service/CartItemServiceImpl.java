@@ -4,8 +4,7 @@ import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.security.access.AccessDeniedException;
 import org.springframework.stereotype.Service;
 
-import com.trash.ecommerce.dto.CartItemDetailsResponse;
-import com.trash.ecommerce.dto.CartItemExistsException;
+import com.trash.ecommerce.dto.CartItemTransactionalResponse;
 import com.trash.ecommerce.entity.Cart;
 import com.trash.ecommerce.entity.CartItem;
 import com.trash.ecommerce.entity.CartItemId;
@@ -33,7 +32,7 @@ public class CartItemServiceImpl implements CartItemService {
     private ProductRepository productRepository;
     @Override
     @Transactional
-    public CartItemDetailsResponse updateQuantityCartItem(String token, Long quantity, Long productId) {
+    public CartItemTransactionalResponse updateQuantityCartItem(Long userId, Long quantity, Long productId) {
         Long userId = jwtService.extractId(token);
         Users users = userRepository.findById(userId)
                                         .orElseThrow(() -> new FindingUserError("user is not found"));
@@ -54,13 +53,12 @@ public class CartItemServiceImpl implements CartItemService {
                                             );
         cartItem.setQuantity(quantity);
         cartItemRepository.save(cartItem);
-        return new CartItemDetailsResponse("Add product into cart successful !");
+        return new CartItemTransactionalResponse("Add product into cart successful !");
     }
 
     @Override
     @Transactional
-    public CartItemDetailsResponse removeItemOutOfCart(String token, CartItemId cartItemId) {
-        Long userId = jwtService.extractId(token);
+    public CartItemTransactionalResponse removeItemOutOfCart(Long userId, CartItemId cartItemId) {
         Users users = userRepository.findById(userId)
                                         .orElseThrow(() -> new FindingUserError("user is not found"));
         Cart cart = users.getCart();
@@ -72,7 +70,7 @@ public class CartItemServiceImpl implements CartItemService {
                                                 .orElseThrow(() -> new ResourceNotFoundException("CartItem not found"));
         cart.getItems().removeIf(item -> item.getId().equals(cartItemId));
         cartItemRepository.delete(cartItem);
-        return new CartItemDetailsResponse("delete item successful");
+        return new CartItemTransactionalResponse("delete item successful");
     }
 
 }

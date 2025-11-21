@@ -141,11 +141,7 @@ public class UserServiceImpl implements UserService {
             user.getCart().setUser(null);
             user.setCart(null);
         }
-        // Ngắt OneToMany
-        for (Invoice invoice : user.getInvoices()) {
-            invoice.setUser(null);
-        }
-        user.getInvoices().clear();
+        
         userRepository.delete(user);
     }
 

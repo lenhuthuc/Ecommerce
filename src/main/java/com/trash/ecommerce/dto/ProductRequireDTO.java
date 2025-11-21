@@ -1,5 +1,6 @@
 package com.trash.ecommerce.dto;
 
+import java.math.BigDecimal;
 import jakarta.validation.constraints.NotNull;
 import lombok.AllArgsConstructor;
 import lombok.Data;
@@ -13,7 +14,7 @@ public class ProductRequireDTO {
     @NotNull
     private String productName;
     @NotNull
-    private Double price;
+    private BigDecimal price;
     @NotNull
     private Long quantity;
 }

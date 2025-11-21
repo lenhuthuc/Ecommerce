@@ -1,10 +1,18 @@
 package com.trash.ecommerce.entity;
 
 import jakarta.persistence.*;
+import lombok.AllArgsConstructor;
+import lombok.Data;
+import lombok.NoArgsConstructor;
+
+import java.math.BigDecimal;
 import java.util.Date;
 
 @Entity
 @Table(name = "invoice")
+@AllArgsConstructor
+@NoArgsConstructor
+@Data
 public class Invoice {
 
     @Id
@@ -24,8 +32,8 @@ public class Invoice {
     @JoinColumn(name = "user_id")
     private Users user;
 
-    @Column(name = "total_price")
-    private Double price;
+    @Column(name = "total_price",nullable = false, precision = 12, scale = 2)
+    private BigDecimal price;
 
     @ManyToOne(
         fetch = FetchType.LAZY,
@@ -42,46 +50,4 @@ public class Invoice {
     @Temporal(TemporalType.TIMESTAMP)
     @Column(name = "created_at")
     private Date createdAt;
-
-    public Invoice() {}
-
-    public Long getId() {
-        return id;
-    }
-
-    public void setId(Long id) {
-        this.id = id;
-    }
-
-    public Users getUser() {
-        return user;
-    }
-
-    public void setUser(Users user) {
-        this.user = user;
-    }
-
-    public Double getPrice() {
-        return price;
-    }
-
-    public void setPrice(Double price) {
-        this.price = price;
-    }
-
-    public PaymentMethod getPaymentMethod() {
-        return paymentMethod;
-    }
-
-    public void setPaymentMethod(PaymentMethod paymentMethod) {
-        this.paymentMethod = paymentMethod;
-    }
-
-    public Date getCreatedAt() {
-        return createdAt;
-    }
-
-    public void setCreatedAt(Date createdAt) {
-        this.createdAt = createdAt;
-    }
 }

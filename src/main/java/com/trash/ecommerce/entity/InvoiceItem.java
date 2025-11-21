@@ -2,6 +2,7 @@ package com.trash.ecommerce.entity;
 
 import jakarta.persistence.*;
 import java.io.Serializable;
+import java.math.BigDecimal;
 import java.util.Objects;
 
 @Entity
@@ -24,8 +25,8 @@ public class InvoiceItem implements Serializable {
     @Column(name = "quantity", nullable = false)
     private Long quantity = 1L;
 
-    @Column(name = "price", nullable = false)
-    private Double price = 0.0;
+   @Column(name = "price",nullable = false, precision = 12, scale = 2)
+    private BigDecimal price;
 
     public InvoiceItem() {}
 
@@ -34,7 +35,7 @@ public class InvoiceItem implements Serializable {
         this.product = product;
         this.quantity = quantity;
         this.id = new InvoiceItemId(invoice.getId(), product.getId());
-        this.price = product.getPrice() * quantity;
+        this.price = product.getPrice().multiply(BigDecimal.valueOf(quantity));
     }
 
     public InvoiceItemId getId() {
@@ -66,7 +67,7 @@ public class InvoiceItem implements Serializable {
             this.id = new InvoiceItemId(invoice.getId(), product.getId());
         }
         if (product != null && this.quantity != null) {
-            this.price = product.getPrice() * this.quantity;
+            this.price = product.getPrice().multiply(BigDecimal.valueOf(this.quantity));
         }
     }
 
@@ -77,15 +78,15 @@ public class InvoiceItem implements Serializable {
     public void setQuantity(Long quantity) {
         this.quantity = quantity;
         if (product != null) {
-            this.price = product.getPrice() * quantity;
+            this.price = product.getPrice().multiply(BigDecimal.valueOf(quantity));
         }
     }
 
-    public Double getPrice() {
+    public BigDecimal getPrice() {
         return price;
     }
 
-    public void setPrice(Double price) {
+    public void setPrice(BigDecimal price) {
         this.price = price;
     }
 

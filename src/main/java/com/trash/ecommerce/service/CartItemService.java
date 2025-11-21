@@ -1,9 +1,10 @@
 package com.trash.ecommerce.service;
 
-import com.trash.ecommerce.dto.CartItemDetailsResponse;
+import com.trash.ecommerce.dto.CartItemTransactionalResponse;
+import com.trash.ecommerce.entity.CartItemId;
 
 public interface CartItemService {
-    public CartItemDetailsResponse updateQuantityCartItem(String token, Long quantity, Long productId);
-    public CartItemDetailsResponse removeItemOutOfCart(String token, Long cartItemId);
+    public CartItemTransactionalResponse updateQuantityCartItem(Long userId, Long quantity, Long productId);
+    public CartItemTransactionalResponse removeItemOutOfCart(Long userId, CartItemId cartItemId);
 
 }

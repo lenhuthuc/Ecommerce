@@ -1,5 +1,7 @@
 package com.trash.ecommerce.entity;
 
+import java.math.BigDecimal;
+import java.util.HashSet;
 import java.util.List;
 import java.util.Set;
 
@@ -25,17 +27,18 @@ public class Product {
 
     @Id
     @GeneratedValue(strategy = GenerationType.IDENTITY)
+    @Column(name = "id")
     private Long id;
 
-    @Column(nullable = false)
+    @Column(name = "img", nullable = false)
     private String img;
     @Column(nullable = false)
     private String productName;
 
-    @Column(nullable = false)
-    private Double price;
+    @Column(name = "price",nullable = false, precision = 12, scale = 2)
+    private BigDecimal price;
 
-    @Column(nullable = false)
+    @Column(name = "quantity", nullable = false)
     private Long quantity;
 
     @OneToMany(
@@ -56,4 +59,10 @@ public class Product {
         cascade = CascadeType.ALL
     )
     private List<Review> reviews;
+    @OneToMany(
+        fetch = FetchType.LAZY,
+        cascade = CascadeType.ALL,
+        mappedBy = "product"
+    )
+    private Set<OrderItem> orderItems = new HashSet<>();
 }

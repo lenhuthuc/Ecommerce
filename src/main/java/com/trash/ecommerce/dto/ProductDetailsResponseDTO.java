@@ -1,5 +1,7 @@
 package com.trash.ecommerce.dto;
 
+import java.math.BigDecimal;
+
 import lombok.AllArgsConstructor;
 import lombok.Data;
 import lombok.NoArgsConstructor;
@@ -10,6 +12,6 @@ import lombok.NoArgsConstructor;
 public class ProductDetailsResponseDTO {
     private String img;
     private String product_name;
-    private Double price;
+    private BigDecimal price;
     private Long quantity;
 }

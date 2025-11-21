@@ -13,9 +13,7 @@ import com.trash.ecommerce.dto.ProductResponseDTO;
 import com.trash.ecommerce.entity.Cart;
 import com.trash.ecommerce.entity.CartItem;
 import com.trash.ecommerce.entity.CartItemId;
-import com.trash.ecommerce.entity.InvoiceItem;
 import com.trash.ecommerce.entity.Product;
-import com.trash.ecommerce.entity.Review;
 import com.trash.ecommerce.entity.Users;
 import com.trash.ecommerce.exception.FindingUserError;
 import com.trash.ecommerce.exception.ProductFingdingException;
@@ -139,10 +137,10 @@ public class ProductServiceImpl implements ProductService {
         CartItem cartItem = new CartItem();
         cartItem.setId(cartItemId);
         cartItem.setCart(cart);
-        cart.getItems().add(cartItem);
         cartItem.setProduct(product);
+        cartItem.setQuantity(quantity); 
         product.getCartItems().add(cartItem);
-        cartItem.setQuantity(quantity);
+        cart.getItems().add(cartItem);
         return new ProductResponseDTO("Them san pham vao gio hang thanh cong !");
     }
 

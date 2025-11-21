@@ -1,12 +1,9 @@
 package com.trash.ecommerce.service;
 
-import com.trash.ecommerce.dto.CartDetailsResponseDTO;
-import com.trash.ecommerce.dto.CartResponseDTO;
-import com.trash.ecommerce.entity.CartItem;
+import java.util.List;
+
+import com.trash.ecommerce.dto.CartItemDetailsResponseDTO;
 
 public interface CartService {
-    public CartDetailsResponseDTO getMyCart(String token);
-    public CartResponseDTO createCart(String token);
-    public CartResponseDTO addItemIntoCart(String token, CartItem cartItem);
-    public CartResponseDTO removeItemOutOfCart(String token, Long cartItemId);
+    public List<CartItemDetailsResponseDTO> getAllItemFromMyCart(String token);
 }

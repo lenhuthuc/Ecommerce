@@ -1,6 +1,9 @@
 package com.trash.ecommerce.entity;
 
-import java.sql.Date;
+import java.math.BigDecimal;
+import java.time.LocalDateTime;
+import java.util.HashSet;
+import java.util.Set;
 
 import jakarta.persistence.CascadeType;
 import jakarta.persistence.Column;
@@ -11,6 +14,7 @@ import jakarta.persistence.GenerationType;
 import jakarta.persistence.Id;
 import jakarta.persistence.JoinColumn;
 import jakarta.persistence.ManyToOne;
+import jakarta.persistence.OneToMany;
 import jakarta.persistence.Table;
 import lombok.AllArgsConstructor;
 import lombok.Data;
@@ -27,21 +31,20 @@ public class Order {
     @Column(name = "id")
     private Long id;
     @Column(name = "status") 
-    private String status;
-    @Column(name = "total_price")
-    private Double totalPrice;
+    private OrderStatus status;
+    @Column(name = "total_price",nullable = false, precision = 12, scale = 2)
+    private BigDecimal totalPrice;
     @Column(name = "create_at")
-    private Date createAt;
-    @ManyToOne(
-        fetch = FetchType.LAZY,
-        cascade = {
-            CascadeType.PERSIST, 
-            CascadeType.MERGE, 
-            CascadeType.DETACH, 
-            CascadeType.REFRESH
-        }
-    )
+    private LocalDateTime createAt;
+    @ManyToOne(fetch = FetchType.LAZY)
     @JoinColumn(name = "user_id")
     private Users user;
+
+    @OneToMany(
+        fetch = FetchType.LAZY,
+        cascade = CascadeType.ALL,
+        mappedBy = "order"
+    )
+    private Set<OrderItem> orderItems = new HashSet<>();
     
 }

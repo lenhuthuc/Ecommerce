@@ -91,7 +91,7 @@ public class Users implements UserDetails {
         mappedBy = "user",
         cascade = CascadeType.ALL
     )
-    private Set<Order> orders;
+    private Set<Order> orders = new HashSet<>();
     @Override
     public Collection<? extends GrantedAuthority> getAuthorities() {
        return roles.stream()
