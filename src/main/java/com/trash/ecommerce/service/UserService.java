@@ -19,4 +19,7 @@ public interface UserService {
     public UserProfileDTO getOwnProfile(String token);
     public UserResponseDTO  updateUser(UserUpdateRequestDTO  user, Long id, String token);
     public void deleteUser(Long id, String token);
+    public UserResponseDTO resetPassword(String email);
+    public boolean verifyDTO(String email, String OTP);
+    public UserResponseDTO changePassword(String email, String newPassword);
 }

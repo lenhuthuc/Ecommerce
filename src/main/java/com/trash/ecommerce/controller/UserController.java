@@ -4,7 +4,11 @@ import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
 
+import com.trash.ecommerce.dto.*;
+import com.trash.ecommerce.service.JwtService;
+import io.jsonwebtoken.ExpiredJwtException;
 import org.springframework.beans.factory.annotation.Autowired;
+import org.springframework.http.HttpStatus;
 import org.springframework.http.ResponseEntity;
 import org.springframework.security.access.prepost.PreAuthorize;
 import org.springframework.validation.BindingResult;
@@ -14,13 +18,6 @@ import org.springframework.web.bind.annotation.RequestMapping;
 import org.springframework.web.bind.annotation.RequestParam;
 import org.springframework.web.bind.annotation.RestController;
 
-import com.trash.ecommerce.dto.UserLoginRequestDTO;
-import com.trash.ecommerce.dto.UserLoginResponseDTO;
-import com.trash.ecommerce.dto.UserProfileDTO;
-import com.trash.ecommerce.dto.UserRegisterRequestDTO;
-import com.trash.ecommerce.dto.UserRegisterResponseDTO;
-import com.trash.ecommerce.dto.UserResponseDTO;
-import com.trash.ecommerce.dto.UserUpdateRequestDTO;
 import com.trash.ecommerce.entity.Users;
 import com.trash.ecommerce.exception.FindingUserError;
 import com.trash.ecommerce.service.UserService;
@@ -40,6 +37,8 @@ import org.springframework.web.bind.annotation.PathVariable;
 public class UserController {
     @Autowired
     private UserService userService;
+    @Autowired
+    private JwtService jwtService;
     @PreAuthorize("hasRole('ADMIN')")
     @GetMapping("/users")
     public ResponseEntity<List<Users>> getAllUsers(
@@ -158,5 +157,19 @@ public class UserController {
             throw new FindingUserError(e.getMessage());
         }
     }
-    
+
+    @GetMapping("/refresh")
+    public ResponseEntity<Token> refreshToken(@RequestHeader String refreshToken) {
+        try {
+            Token token = jwtService.refreshToken(refreshToken);
+            if (token == null) {
+                return ResponseEntity.status(HttpStatus.UNAUTHORIZED).build();
+            }
+            return ResponseEntity.ok(token);
+        } catch (ExpiredJwtException e) {
+            return ResponseEntity.status(HttpStatus.UNAUTHORIZED).body(null);
+        }
+
+    }
+
 }

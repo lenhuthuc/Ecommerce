@@ -8,7 +8,7 @@ import lombok.NoArgsConstructor;
 @NoArgsConstructor
 @AllArgsConstructor
 public class UserLoginResponseDTO {
-    private String token;
+    private Token token;
     private String tokenType;
     private java.util.Date expiresIn;
     private String message;

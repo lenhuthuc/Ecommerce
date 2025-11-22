@@ -5,11 +5,15 @@ import java.util.Base64;
 import java.util.Date;
 import java.util.HashMap;
 import java.util.Map;
+import java.util.concurrent.TimeUnit;
 import java.util.function.Function;
 
 import javax.crypto.KeyGenerator;
 import javax.crypto.SecretKey;
 
+import com.trash.ecommerce.dto.Token;
+import org.springframework.beans.factory.annotation.Autowired;
+import org.springframework.data.redis.core.RedisTemplate;
 import org.springframework.security.core.userdetails.UserDetails;
 import org.springframework.stereotype.Service;
 
@@ -20,6 +24,8 @@ import io.jsonwebtoken.security.Keys;
 @Service
 public class JwtService {
     private String secretKey = "Banana";
+    @Autowired
+    private RedisTemplate<String, Object> redisTemplate;
     public JwtService() {
         try {
             KeyGenerator keyGenerator = KeyGenerator.getInstance("HmacSHA256");
@@ -31,18 +37,34 @@ public class JwtService {
 
     }
 
-    public String generateToken(String email, Long id) {
+    public Token generateToken(String email, Long id) {
         Map<String, Object> claims = new HashMap<>();
+        Token token = new Token();
         claims.put("id", id);
-        return Jwts.builder()
-                    .claims()
-                    .add(claims)
-                    .subject(email)
-                    .issuedAt(new Date(System.currentTimeMillis()))
-                    .expiration(new Date(System.currentTimeMillis() + 1000 * 60 * 60 * 10))
-                    .and()
-                    .signWith(getKey())
-                    .compact();
+        token.setAccess(
+                Jwts.builder()
+                        .claims()
+                        .add(claims)
+                        .subject(email)
+                        .issuedAt(new Date(System.currentTimeMillis()))
+                        .expiration(new Date(System.currentTimeMillis() + 15 * 60 * 1000))
+                        .and()
+                        .signWith(getKey())
+                        .compact()
+        );
+        token.setRefresh(
+                Jwts.builder()
+                        .claims()
+                        .add(claims)
+                        .subject(email)
+                        .issuedAt(new Date(System.currentTimeMillis()))
+                        .expiration(new Date(System.currentTimeMillis() + 3 * 60 * 60 * 1000))
+                        .and()
+                        .signWith(getKey())
+                        .compact()
+        );
+        redisTemplate.opsForValue().set("refresh:" + String.valueOf(id), token.getRefresh(), 3 * 60 * 60, TimeUnit.SECONDS);
+        return token;
     }
 
     private SecretKey getKey() {
@@ -88,4 +110,21 @@ public class JwtService {
     public Date extractExpiration(String token) {
         return extractClaim(token, Claims::getExpiration);
     }
+
+    public Token refreshToken(String oldRefreshToken) {
+        Long userId = extractId(oldRefreshToken);
+        String storedToken = (String) redisTemplate.opsForValue().get("refresh:" + userId);
+        if (storedToken == null || !storedToken.equals(oldRefreshToken) || isExpiration(storedToken)) {
+            return null;
+        }
+        redisTemplate.delete("refresh:" + userId);
+        Token token = generateToken(extractUsername(storedToken), userId);
+        redisTemplate.opsForValue().set(
+                "refresh:" + userId,
+                token.getRefresh(),
+                3, TimeUnit.HOURS
+        );
+        return token;
+    }
+
 }
