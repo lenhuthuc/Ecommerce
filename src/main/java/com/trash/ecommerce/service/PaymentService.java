@@ -8,5 +8,5 @@ import jakarta.servlet.http.HttpServletRequest;
 
 public interface PaymentService {
     public String createPaymentUrl(BigDecimal total_price, String orderInfo, Order order, String ipAddress);
-    public PaymentMethodResponse handleProcedurePayment(HttpServletRequest request);
+    public PaymentMethodResponse handleProcedurePayment(HttpServletRequest request, Long userId);
 }

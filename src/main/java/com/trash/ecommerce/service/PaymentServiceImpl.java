@@ -32,6 +32,8 @@ public class PaymentServiceImpl implements PaymentService {
     private CartRepository cartRepository;
     @Autowired
     private CartItemService cartItemService;
+    @Autowired
+    private OrderService orderService;
     @Override
     public String createPaymentUrl(BigDecimal total_price, String orderInfo, Order order, String ipAddress) {
         String vnp_Version = "2.1.0";
@@ -95,7 +97,7 @@ public class PaymentServiceImpl implements PaymentService {
         return vnPayConfig.getUrl() + "?" + queryUrl;
     }
 
-    public PaymentMethodResponse handleProcedurePayment(HttpServletRequest request) {
+    public PaymentMethodResponse handleProcedurePayment(HttpServletRequest request, Long userId) {
         Map<String, String> fields = new HashMap<>();
         Iterator<String> params = request.getParameterNames().asIterator();
         while (params.hasNext()) {
@@ -130,19 +132,7 @@ public class PaymentServiceImpl implements PaymentService {
                     {
                         if ("00".equals(request.getParameter("vnp_ResponseCode")))
                         {
-                            order.setStatus(OrderStatus.PAID);
-                            Users user = order.getUser();
-                            Cart cart = user.getCart();
-                            for(CartItem cartItem : cart.getItems()) {
-                                Product product = cartItem.getProduct();
-                                if (product.getQuantity() - cartItem.getQuantity() >= 0) {
-                                    product.setQuantity(product.getQuantity() - cartItem.getQuantity());
-                                } else {
-                                    throw new ProductQuantityValidation("Quantity is invalidation !");
-                                }
-                                cartItemService.removeItemOutOfCart(user.getId(), cartItem.getId());
-                            }
-                            orderRepository.save(order);
+                            orderService.finalizeOrder(userId, Long.valueOf(fields.get("vnp_TxnRef")));
                         }
                         else
                         {

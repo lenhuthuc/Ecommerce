@@ -3,9 +3,10 @@ package com.trash.ecommerce.service;
 import java.math.BigDecimal;
 import java.time.LocalDateTime;
 import java.util.Set;
-import java.util.stream.Collector;
 import java.util.stream.Collectors;
 
+import com.trash.ecommerce.entity.*;
+import com.trash.ecommerce.exception.ProductQuantityValidation;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
@@ -13,12 +14,6 @@ import org.springframework.transaction.annotation.Transactional;
 import com.trash.ecommerce.dto.CartItemDetailsResponseDTO;
 import com.trash.ecommerce.dto.OrderMessageResponseDTO;
 import com.trash.ecommerce.dto.OrderResponseDTO;
-import com.trash.ecommerce.entity.Cart;
-import com.trash.ecommerce.entity.CartItem;
-import com.trash.ecommerce.entity.Order;
-import com.trash.ecommerce.entity.OrderItem;
-import com.trash.ecommerce.entity.OrderStatus;
-import com.trash.ecommerce.entity.Users;
 import com.trash.ecommerce.exception.FindingUserError;
 import com.trash.ecommerce.exception.OrderExistsException;
 import com.trash.ecommerce.exception.OrderValidException;
@@ -37,6 +32,10 @@ public class OrderServiceImpl implements OrderService {
     private OrderItemRepository orderItemRepository;
     @Autowired
     private PaymentService paymentService;
+    @Autowired
+    private CartItemService cartItemService;
+    @Autowired
+    private EmailService emailService;
     @Override
     public OrderResponseDTO createMyOrder(Long userId) {
         Users users = userRepository.findById(userId)
@@ -99,6 +98,41 @@ public class OrderServiceImpl implements OrderService {
         if(!order.getUser().getId().equals(userId)) throw new OrderValidException("This user do not have authorization to this order");
         String paymentUrl = paymentService.createPaymentUrl(order.getTotalPrice(), "Transaction payment", order, ipAddress);
         return new OrderMessageResponseDTO(paymentUrl);
+    }
+
+    @Override
+    public OrderMessageResponseDTO finalizeOrder(Long userId, Long orderId) {
+
+        Order order = orderRepository.findById(orderId)
+                .orElseThrow(() -> new OrderExistsException("Order not found"));
+        Users user = order.getUser();
+        if(userId.equals(user.getId())) throw new OrderValidException("User not valid");
+        order.setStatus(OrderStatus.PAID);
+        Cart cart = user.getCart();
+        for(CartItem cartItem : cart.getItems()) {
+            Product product = cartItem.getProduct();
+            if (product.getQuantity() - cartItem.getQuantity() >= 0) {
+                product.setQuantity(product.getQuantity() - cartItem.getQuantity());
+            } else {
+                throw new ProductQuantityValidation("Quantity is invalidation !");
+            }
+            cartItemService.removeItemOutOfCart(user.getId(), cartItem.getId());
+        }
+        orderRepository.save(order);
+        String subject = "Confirm the order transaction";
+        String body = String.format(
+                "Hi %s!\n\n" +
+                        "We’ve successfully received your order #%s, and it’s now on its way to your doorstep " +
+                        "(unless the universe decides to play tricks, but let’s hope not 😅).\n\n" +
+                        "Get ready to enjoy your purchase soon! If anything goes wrong, don’t worry — our team is armed " +
+                        "with coffee and a few clicks of magic 💻☕.\n\n" +
+                        "Thanks for choosing us and placing your order — you just helped us secure our morning caffeine fix!\n\n" +
+                        "Cheers,\n" +
+                        "The Shop Team",
+                user.getEmail(), orderId
+        );
+        emailService.sendEmail(user.getEmail(), subject, body);
+        return new OrderMessageResponseDTO("Procedure is complete");
     }
 
 }

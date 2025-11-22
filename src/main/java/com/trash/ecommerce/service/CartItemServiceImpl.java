@@ -33,7 +33,7 @@ public class CartItemServiceImpl implements CartItemService {
     @Override
     @Transactional
     public CartItemTransactionalResponse updateQuantityCartItem(Long userId, Long quantity, Long productId) {
-        Long userId = jwtService.extractId(token);
+
         Users users = userRepository.findById(userId)
                                         .orElseThrow(() -> new FindingUserError("user is not found"));
         Cart cart = users.getCart();
