@@ -5,6 +5,6 @@ import com.trash.ecommerce.entity.CartItemId;
 
 public interface CartItemService {
     public CartItemTransactionalResponse updateQuantityCartItem(Long userId, Long quantity, Long productId);
-    public CartItemTransactionalResponse removeItemOutOfCart(Long userId, CartItemId cartItemId);
+    public CartItemTransactionalResponse removeItemOutOfCart(Long userId, Long productId);
 
 }

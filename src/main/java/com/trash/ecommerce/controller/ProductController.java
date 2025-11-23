@@ -85,11 +85,11 @@ public class ProductController {
        }
     }
     
-    @PostMapping("/update")
+    @PutMapping("/update/{id}")
     @PreAuthorize("hasRole('ADMIN')")
     public ResponseEntity<ProductResponseDTO> updateProduct(
         @RequestBody ProductRequireDTO productRequireDTO,
-        @RequestParam Long id,
+        @PathVariable Long id,
         @RequestParam("file") MultipartFile file
         ) {
        try {
@@ -100,10 +100,10 @@ public class ProductController {
        }
     }
 
-    @PostMapping("/delete")
+    @DeleteMapping("/delete/{id}")
     @PreAuthorize("hasRole('ADMIN')")
     public ResponseEntity<ProductResponseDTO> updateProduct(
-        @RequestParam Long id
+        @PathVariable Long id
         ) {
        try {
          ProductResponseDTO productResponseDTO = productService.deleteProductById(id);

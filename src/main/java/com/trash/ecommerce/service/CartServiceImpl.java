@@ -21,8 +21,7 @@ public class CartServiceImpl implements CartService {
     @Autowired
     private UserRepository userRepository;
     @Override
-    public List<CartItemDetailsResponseDTO> getAllItemFromMyCart(String token) {
-        Long userId = jwtService.extractId(token);
+    public List<CartItemDetailsResponseDTO> getAllItemFromMyCart(Long userId) {
         Users users = userRepository.findById(userId)
                                     .orElseThrow(() -> new FindingUserError("User not found"));
         Cart cart = users.getCart();

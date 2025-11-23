@@ -5,5 +5,5 @@ import java.util.List;
 import com.trash.ecommerce.dto.CartItemDetailsResponseDTO;
 
 public interface CartService {
-    public List<CartItemDetailsResponseDTO> getAllItemFromMyCart(String token);
+    public List<CartItemDetailsResponseDTO> getAllItemFromMyCart(Long userId);
 }

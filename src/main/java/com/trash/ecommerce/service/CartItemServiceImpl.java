@@ -1,5 +1,6 @@
 package com.trash.ecommerce.service;
 
+import com.trash.ecommerce.exception.CartItemException;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.security.access.AccessDeniedException;
 import org.springframework.stereotype.Service;
@@ -58,16 +59,17 @@ public class CartItemServiceImpl implements CartItemService {
 
     @Override
     @Transactional
-    public CartItemTransactionalResponse removeItemOutOfCart(Long userId, CartItemId cartItemId) {
+    public CartItemTransactionalResponse removeItemOutOfCart(Long userId, Long productId) {
         Users users = userRepository.findById(userId)
                                         .orElseThrow(() -> new FindingUserError("user is not found"));
         Cart cart = users.getCart();
         Long cartId = cart.getId();
+        CartItem cartItem = cartItemRepository.findById(new CartItemId(cartId, productId))
+                .orElseThrow(() -> new CartItemException("Item not found"));
+        CartItemId cartItemId = cartItem.getId();
         if (!cartItemId.getCartId().equals(cartId)) {
             throw new AccessDeniedException("You can't delete this item !");
         }
-        CartItem cartItem = cartItemRepository.findById(cartItemId)
-                                                .orElseThrow(() -> new ResourceNotFoundException("CartItem not found"));
         cart.getItems().removeIf(item -> item.getId().equals(cartItemId));
         cartItemRepository.delete(cartItem);
         return new CartItemTransactionalResponse("delete item successful");
