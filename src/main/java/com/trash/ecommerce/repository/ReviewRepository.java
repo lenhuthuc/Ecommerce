@@ -5,7 +5,9 @@ import org.springframework.stereotype.Repository;
 
 import com.trash.ecommerce.entity.Review;
 
+import java.util.List;
+
 @Repository
 public interface ReviewRepository extends JpaRepository <Review, Long>{
-
+    List<Review> findByProductId(Long productId);
 }

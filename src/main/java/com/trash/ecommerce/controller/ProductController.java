@@ -1,6 +1,12 @@
 package com.trash.ecommerce.controller;
 
-import org.springframework.web.bind.annotation.RestController;
+import jakarta.annotation.Resource;
+import jdk.jfr.ContentType;
+import org.springframework.core.io.ClassPathResource;
+import org.springframework.core.io.UrlResource;
+import org.springframework.http.HttpStatus;
+import org.springframework.http.MediaType;
+import org.springframework.web.bind.annotation.*;
 
 import com.trash.ecommerce.dto.ProductDetailsResponseDTO;
 import com.trash.ecommerce.dto.ProductRequireDTO;
@@ -9,17 +15,16 @@ import com.trash.ecommerce.exception.ProductCreatingException;
 import com.trash.ecommerce.exception.ProductFingdingException;
 import com.trash.ecommerce.service.ProductService;
 
+import java.io.IOException;
+import java.net.MalformedURLException;
+import java.nio.file.Path;
+import java.nio.file.Paths;
 import java.util.List;
 
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.http.ResponseEntity;
 import org.springframework.security.access.prepost.PreAuthorize;
-import org.springframework.web.bind.annotation.GetMapping;
-import org.springframework.web.bind.annotation.RequestMapping;
-import org.springframework.web.bind.annotation.RequestParam;
-import org.springframework.web.bind.annotation.PostMapping;
-import org.springframework.web.bind.annotation.RequestBody;
-
+import org.springframework.web.multipart.MultipartFile;
 
 
 @RestController
@@ -27,9 +32,9 @@ import org.springframework.web.bind.annotation.RequestBody;
 public class ProductController {
     @Autowired
     private ProductService productService;
-    @GetMapping("/")
+    @GetMapping("/{id}")
     public ResponseEntity<ProductDetailsResponseDTO> findProductById(
-        @RequestParam Long id
+        @PathVariable Long id
     ) {
         try {
             ProductDetailsResponseDTO product = productService.findProductById(id);
@@ -52,7 +57,7 @@ public class ProductController {
         }
     }
     
-    @GetMapping("/")
+    @GetMapping("/products")
     public ResponseEntity<List<ProductDetailsResponseDTO>> findProductByName(
         @RequestParam String name,
         @RequestParam(defaultValue = "0") int noPage,
@@ -69,10 +74,11 @@ public class ProductController {
     @PostMapping("/add")
     @PreAuthorize("hasRole('ADMIN')")
     public ResponseEntity<ProductResponseDTO> addProduct(
-        @RequestBody ProductRequireDTO productRequireDTO
+        @RequestBody ProductRequireDTO productRequireDTO,
+        @RequestParam("file") MultipartFile file
         ) {
        try {
-         ProductResponseDTO productResponseDTO = productService.createProduct(productRequireDTO);
+         ProductResponseDTO productResponseDTO = productService.createProduct(productRequireDTO, file);
          return ResponseEntity.ok(productResponseDTO);
        } catch (Exception e) {
          throw new ProductCreatingException(e.getMessage());
@@ -83,10 +89,11 @@ public class ProductController {
     @PreAuthorize("hasRole('ADMIN')")
     public ResponseEntity<ProductResponseDTO> updateProduct(
         @RequestBody ProductRequireDTO productRequireDTO,
-        @RequestParam Long id
+        @RequestParam Long id,
+        @RequestParam("file") MultipartFile file
         ) {
        try {
-         ProductResponseDTO productResponseDTO = productService.updateProduct(productRequireDTO, id);
+         ProductResponseDTO productResponseDTO = productService.updateProduct(productRequireDTO, id, file);
          return ResponseEntity.ok(productResponseDTO);
        } catch (Exception e) {
          throw new ProductCreatingException(e.getMessage());
@@ -104,5 +111,23 @@ public class ProductController {
        } catch (Exception e) {
          throw new ProductCreatingException(e.getMessage());
        }
+    }
+
+    @GetMapping("/products/{id}/img")
+    public ResponseEntity<?> getProductImg(
+            @PathVariable long id
+    ) throws IOException {
+        try {
+            Path path = Paths.get(productService.getImgProduct(id));
+            UrlResource resource = new UrlResource(path.toUri());
+            String contentType = "application/octet-stream";
+            if (path.endsWith(".png")) contentType = "image/png";
+            else if (path.endsWith(".jpg") || path.endsWith(".jpeg")) contentType = "image/jpeg";
+            else if (path.endsWith(".gif")) contentType = "image/gif";
+
+            return ResponseEntity.ok().contentType(MediaType.valueOf(contentType)).body(resource);
+        } catch (IOException e) {
+            return ResponseEntity.status(HttpStatus.INTERNAL_SERVER_ERROR).build();
+        }
     }
 }

@@ -8,6 +8,7 @@ import java.util.*;
 
 import com.trash.ecommerce.config.PaymentHashGenerator;
 import com.trash.ecommerce.config.VnPayConfig;
+import com.trash.ecommerce.dto.PaymentMethodMessageResponse;
 import com.trash.ecommerce.dto.PaymentMethodResponse;
 import com.trash.ecommerce.entity.*;
 import com.trash.ecommerce.exception.OrderExistsException;
@@ -15,6 +16,8 @@ import com.trash.ecommerce.exception.PaymentException;
 import com.trash.ecommerce.exception.ProductQuantityValidation;
 import com.trash.ecommerce.repository.CartRepository;
 import com.trash.ecommerce.repository.OrderRepository;
+import com.trash.ecommerce.repository.PaymentMethodRepository;
+import com.trash.ecommerce.repository.UserRepository;
 import jakarta.servlet.http.HttpServletRequest;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.stereotype.Service;
@@ -22,6 +25,10 @@ import org.springframework.stereotype.Service;
 @Service
 public class PaymentServiceImpl implements PaymentService {
 
+    @Autowired
+    private UserRepository userRepository;
+    @Autowired
+    private PaymentMethodRepository paymentMethodRepository;
     @Autowired
     private VnPayConfig vnPayConfig;
     @Autowired
@@ -34,6 +41,20 @@ public class PaymentServiceImpl implements PaymentService {
     private CartItemService cartItemService;
     @Autowired
     private OrderService orderService;
+
+    @Override
+    public PaymentMethodMessageResponse addPaymentMethod(Long userId, String name) {
+        Users user = userRepository.findById(userId)
+                .orElseThrow(() -> new RuntimeException("User not found"));
+
+        PaymentMethod paymentMethod = new PaymentMethod();
+        paymentMethod.setMethodName(name);
+
+        PaymentMethod saved = paymentMethodRepository.save(paymentMethod);
+
+        return new PaymentMethodMessageResponse("success");
+    }
+
     @Override
     public String createPaymentUrl(BigDecimal total_price, String orderInfo, Order order, String ipAddress) {
         String vnp_Version = "2.1.0";

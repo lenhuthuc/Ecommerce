@@ -64,11 +64,11 @@ public class UserServiceImpl implements UserService {
         String password = en.encode(user.getPassword());
         tmpUser.setPassword(password);
         tmpUser.setRoles(Set.of(roleService.findRoleByName("USER")));
-        userRepository.save(tmpUser);
         Cart cart = new Cart();
         cart.setUser(tmpUser);
         cartRepository.save(cart);
         tmpUser.setCart(cart);
+        userRepository.save(tmpUser);
         return new UserRegisterResponseDTO("Đăng kí thành công");
     }
 

@@ -1,7 +1,15 @@
 package com.trash.ecommerce.service;
 
+import java.io.File;
+import java.io.IOException;
+import java.nio.file.Files;
+import java.nio.file.Path;
+import java.nio.file.Paths;
+import java.nio.file.StandardCopyOption;
 import java.util.List;
+import java.util.UUID;
 
+import com.trash.ecommerce.mapper.ProductMapper;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.data.domain.Page;
 import org.springframework.data.domain.PageRequest;
@@ -21,6 +29,7 @@ import com.trash.ecommerce.repository.ProductRepository;
 import com.trash.ecommerce.repository.UserRepository;
 
 import jakarta.transaction.Transactional;
+import org.springframework.web.multipart.MultipartFile;
 
 @Service
 public class ProductServiceImpl implements ProductService {
@@ -32,12 +41,13 @@ public class ProductServiceImpl implements ProductService {
     private JwtService jwtService;
     @Autowired
     private UserRepository userRepository;
+    @Autowired
+    private ProductMapper productMapper;
     @Override
     public ProductDetailsResponseDTO findProductById(Long id) {
         ProductDetailsResponseDTO productDTO = new ProductDetailsResponseDTO();
         Product product = productRepository.findById(id)
                 .orElseThrow(() -> new RuntimeException());
-        productDTO.setImg(product.getImg());
         productDTO.setPrice(product.getPrice());
         productDTO.setProduct_name(product.getProductName());
         productDTO.setQuantity(product.getQuantity());
@@ -48,17 +58,12 @@ public class ProductServiceImpl implements ProductService {
     public List<ProductDetailsResponseDTO> findAllProduct(int noPage, int sizePage) {
         PageRequest pageRequest = PageRequest.of(noPage, sizePage);
         Page<Product> products = productRepository.findAll(pageRequest);
-        List<ProductDetailsResponseDTO> productsDTO = products
+        List<ProductDetailsResponseDTO> productsDTOs = products
                 .getContent()
                 .stream()
-                .map(
-                        product -> new ProductDetailsResponseDTO(
-                                product.getImg(),
-                                product.getProductName(),
-                                product.getPrice(),
-                                product.getQuantity()))
+                .map(product -> productMapper.mapperProduct(product))
                 .toList();
-        return productsDTO;
+        return productsDTOs;
     }
 
     @Override
@@ -67,21 +72,19 @@ public class ProductServiceImpl implements ProductService {
         Page<Product> products = productRepository.findProductsByName(name, pageRequest);
         List<ProductDetailsResponseDTO> productDetailsResponseDTO = products.getContent()
                                                                                 .stream()
-                                                                                .map(
-                                                                                    product -> new ProductDetailsResponseDTO(
-                                                                                        product.getImg(),
-                                                                                        product.getProductName(),
-                                                                                        product.getPrice(),
-                                                                                        product.getQuantity()
-                                                                                    )
-                                                                                ).toList();
+                                                                                .map(product -> productMapper.mapperProduct(product))
+                                                                                .toList();
         return productDetailsResponseDTO;
     }
 
     @Override
-    public ProductResponseDTO createProduct(ProductRequireDTO productRequireDTO) {
+    public ProductResponseDTO createProduct(ProductRequireDTO productRequireDTO, MultipartFile file) throws IOException {
         Product product = new Product();
-        product.setImg(productRequireDTO.getImg());
+        String fileResource = UUID.randomUUID() + "_" + file.getOriginalFilename();
+        product.setImgName(file.getOriginalFilename());
+        Path path = Paths.get("uploads/" + fileResource);
+        Files.copy(file.getInputStream(),path);
+        product.setImgData(fileResource);
         product.setPrice(productRequireDTO.getPrice());
         product.setProductName(productRequireDTO.getProductName());
         product.setQuantity(productRequireDTO.getQuantity());
@@ -91,12 +94,26 @@ public class ProductServiceImpl implements ProductService {
 
     @Override
     @Transactional
-    public ProductResponseDTO updateProduct(ProductRequireDTO productRequireDTO, Long id) {
+    public ProductResponseDTO updateProduct(ProductRequireDTO productRequireDTO, Long id, MultipartFile file) throws IOException {
         Product product = productRepository.findById(id).orElseThrow(
             () -> new ProductFingdingException("Product is not found")
         );
         if (productRequireDTO.getImg() != null && !productRequireDTO.getImg().isEmpty()) {
-            product.setImg(productRequireDTO.getImg());
+            String oldImgPath = product.getImgData();
+            if (oldImgPath != null) {
+                File oldFile = new File(oldImgPath);
+                if (oldFile.exists()) {
+                    oldFile.delete();
+                }
+            }
+
+            String filename = UUID.randomUUID() + "_" + file.getOriginalFilename();
+
+            Path uploadPath = Paths.get("uploads/" + filename);
+            Files.copy(file.getInputStream(), uploadPath, StandardCopyOption.REPLACE_EXISTING);
+
+            product.setImgName(file.getOriginalFilename());
+            product.setImgData(uploadPath.toString());
         }
         if (productRequireDTO.getPrice() != null) {
             product.setPrice(productRequireDTO.getPrice());
@@ -142,6 +159,13 @@ public class ProductServiceImpl implements ProductService {
         product.getCartItems().add(cartItem);
         cart.getItems().add(cartItem);
         return new ProductResponseDTO("Them san pham vao gio hang thanh cong !");
+    }
+
+    @Override
+    public String getImgProduct(Long productId) {
+        Product product = productRepository.findById(productId)
+                .orElseThrow(() -> new ProductFingdingException("Product not found"));
+        return product.getImgData();
     }
 
 }

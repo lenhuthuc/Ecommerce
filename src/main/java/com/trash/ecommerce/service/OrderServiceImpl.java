@@ -6,7 +6,8 @@ import java.util.Set;
 import java.util.stream.Collectors;
 
 import com.trash.ecommerce.entity.*;
-import com.trash.ecommerce.exception.ProductQuantityValidation;
+import com.trash.ecommerce.exception.*;
+import com.trash.ecommerce.repository.PaymentMethodRepository;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
@@ -14,9 +15,6 @@ import org.springframework.transaction.annotation.Transactional;
 import com.trash.ecommerce.dto.CartItemDetailsResponseDTO;
 import com.trash.ecommerce.dto.OrderMessageResponseDTO;
 import com.trash.ecommerce.dto.OrderResponseDTO;
-import com.trash.ecommerce.exception.FindingUserError;
-import com.trash.ecommerce.exception.OrderExistsException;
-import com.trash.ecommerce.exception.OrderValidException;
 import com.trash.ecommerce.repository.OrderItemRepository;
 import com.trash.ecommerce.repository.OrderRepository;
 import com.trash.ecommerce.repository.UserRepository;
@@ -25,21 +23,39 @@ import com.trash.ecommerce.repository.UserRepository;
 public class OrderServiceImpl implements OrderService {
 
     @Autowired
-    private UserRepository userRepository;
+    private final UserRepository userRepository;
     @Autowired
-    private OrderRepository orderRepository;
+    private final OrderRepository orderRepository;
     @Autowired
-    private OrderItemRepository orderItemRepository;
+    private final OrderItemRepository orderItemRepository;
     @Autowired
-    private PaymentService paymentService;
+    private final PaymentService paymentService;
     @Autowired
-    private CartItemService cartItemService;
+    private final CartItemService cartItemService;
     @Autowired
-    private EmailService emailService;
+    private final EmailService emailService;
+    @Autowired
+    private final InvoiceService invoiceService;
+    @Autowired
+    private final PaymentMethodRepository paymentMethodRepository;
+
+    public OrderServiceImpl(UserRepository userRepository, OrderRepository orderRepository, OrderItemRepository orderItemRepository, PaymentService paymentService, CartItemService cartItemService, EmailService emailService, InvoiceService invoiceService, PaymentMethodRepository paymentMethodRepository) {
+        this.userRepository = userRepository;
+        this.orderRepository = orderRepository;
+        this.orderItemRepository = orderItemRepository;
+        this.paymentService = paymentService;
+        this.cartItemService = cartItemService;
+        this.emailService = emailService;
+        this.invoiceService = invoiceService;
+        this.paymentMethodRepository = paymentMethodRepository;
+    }
+
     @Override
-    public OrderResponseDTO createMyOrder(Long userId) {
+    public OrderResponseDTO createMyOrder(Long userId, Long paymentMethodId) {
         Users users = userRepository.findById(userId)
                                         .orElseThrow(() -> new FindingUserError("user is not found"));
+        PaymentMethod paymentMethod = paymentMethodRepository.findById(paymentMethodId)
+                .orElseThrow(() -> new PaymentException("Method not found"));
         Cart cart = users.getCart();
         Order order = new Order();
         order.setCreateAt(LocalDateTime.now());
@@ -132,6 +148,7 @@ public class OrderServiceImpl implements OrderService {
                 user.getEmail(), orderId
         );
         emailService.sendEmail(user.getEmail(), subject, body);
+        invoiceService.createInvoice(userId, orderId, order.getPaymentMethod().getId());
         return new OrderMessageResponseDTO("Procedure is complete");
     }
 

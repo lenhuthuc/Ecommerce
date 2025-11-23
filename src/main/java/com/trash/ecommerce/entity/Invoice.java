@@ -7,6 +7,8 @@ import lombok.NoArgsConstructor;
 
 import java.math.BigDecimal;
 import java.util.Date;
+import java.util.HashSet;
+import java.util.Set;
 
 @Entity
 @Table(name = "invoice")
@@ -50,4 +52,15 @@ public class Invoice {
     @Temporal(TemporalType.TIMESTAMP)
     @Column(name = "created_at")
     private Date createdAt;
+
+    @OneToOne
+    @JoinColumn(name = "order_id")
+    private Order order;
+
+    @OneToMany(
+            fetch = FetchType.LAZY,
+            cascade = CascadeType.ALL,
+            mappedBy = "invoice"
+    )
+    private Set<InvoiceItem> invoiceItems = new HashSet<>();
 }
