@@ -12,17 +12,24 @@ import jakarta.persistence.GenerationType;
 import jakarta.persistence.Id;
 import jakarta.persistence.ManyToMany;
 import jakarta.persistence.Table;
+import lombok.*;
 
 @Entity
+@AllArgsConstructor
+@NoArgsConstructor
+@Getter
+@Setter
 @Table(name = "roles")
 public class Role {
 
     @Id
     @GeneratedValue(strategy = GenerationType.IDENTITY)
+    @Column(name = "id")
+    @EqualsAndHashCode.Include
     private Long id;
 
-    @Column(nullable = false, length = 50)
-    private String roleName;
+    @Column(name = "role_name", nullable = false, length = 50)
+    private String roleName = "User";
 
     @ManyToMany(
         fetch = FetchType.LAZY,
@@ -30,34 +37,4 @@ public class Role {
                 CascadeType.DETACH, CascadeType.REFRESH},
         mappedBy = "roles")
     private Set<Users> users = new HashSet<>();
-
-    public Role(Long id, String roleName, Set<Users> users) {
-        this.id = id;
-        this.roleName = roleName;
-        this.users = users;
-    }
-
-    public Long getId() {
-        return id;
-    }
-
-    public void setId(Long id) {
-        this.id = id;
-    }
-
-    public String getRoleName() {
-        return roleName;
-    }
-
-    public void setRoleName(String roleName) {
-        this.roleName = roleName;
-    }
-
-    public Set<Users> getUsers() {
-        return users;
-    }
-
-    public void setUsers(Set<Users> users) {
-        this.users = users;
-    }
 }

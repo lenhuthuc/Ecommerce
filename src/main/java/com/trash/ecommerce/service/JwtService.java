@@ -73,6 +73,8 @@ public class JwtService {
     }
 
     public Long extractId(String token) {
+        token = token.substring(7);
+        System.out.println(token);
         Claims claims = extractAllClaims(token);
         Long id = claims.get("id", Long.class);
         return id;

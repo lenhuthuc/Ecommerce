@@ -16,8 +16,9 @@ public interface UserService {
     public List<Users> findAllUser(int noPage, int sizePage);
     public UserRegisterResponseDTO register(UserRegisterRequestDTO user);
     public UserLoginResponseDTO login(UserLoginRequestDTO user);
+    public UserResponseDTO logout(Long userId);
     public Users findUsersById(Long id);
-    public UserProfileDTO getOwnProfile(String token);
+    public UserProfileDTO getOwnProfile(Long userId);
     public UserResponseDTO  updateUser(UserUpdateRequestDTO  user, Long id, String token);
     public void deleteUser(Long id, String token);
     public UserResponseDTO resetPassword(String email);

@@ -1,9 +1,7 @@
 package com.trash.ecommerce.entity;
 
 import jakarta.persistence.*;
-import lombok.AllArgsConstructor;
-import lombok.Data;
-import lombok.NoArgsConstructor;
+import lombok.*;
 
 import java.io.Serializable;
 import java.math.BigDecimal;
@@ -11,12 +9,14 @@ import java.util.Objects;
 
 @AllArgsConstructor
 @NoArgsConstructor
-@Data
+@Getter
+@Setter
 @Entity
 @Table(name = "invoice_items")
 public class InvoiceItem implements Serializable {
 
     @EmbeddedId
+    @EqualsAndHashCode.Include
     private InvoiceItemId id = new InvoiceItemId();
 
     @ManyToOne(fetch = FetchType.LAZY)

@@ -1,9 +1,12 @@
 package com.trash.ecommerce.controller;
 
+import com.trash.ecommerce.dto.OrderRequest;
 import com.trash.ecommerce.dto.PaymentMethodMessageResponse;
 import com.trash.ecommerce.dto.PaymentMethodResponse;
+import com.trash.ecommerce.entity.Order;
 import com.trash.ecommerce.service.JwtService;
 import com.trash.ecommerce.service.PaymentService;
+import com.trash.ecommerce.service.UserService;
 import jakarta.servlet.http.HttpServletRequest;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
@@ -11,6 +14,8 @@ import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.http.HttpStatus;
 import org.springframework.http.ResponseEntity;
 import org.springframework.web.bind.annotation.*;
+
+import java.math.BigDecimal;
 
 @RestController
 @RequestMapping("/api/payments")
@@ -21,6 +26,25 @@ public class PaymentController {
     private PaymentService paymentService;
     @Autowired
     private JwtService jwtService;
+    @Autowired
+    private UserService userService;
+
+    @PostMapping("/createUrl")
+    public ResponseEntity<String> createUrlVNPay(
+            @RequestParam("totalPrice") BigDecimal total_price,
+            @RequestParam("orderInfo") String orderInfo,
+            @RequestParam("orderId") Long orderId,
+            HttpServletRequest request
+    ) {
+        try {
+            String ipAddress = userService.getClientIpAddress(request);
+            String Url = paymentService.createPaymentUrl(total_price, orderInfo, orderId, ipAddress);
+            return ResponseEntity.ok(Url);
+        } catch (Exception e) {
+            logger.error("Payment has errors", e);
+            return ResponseEntity.status(HttpStatus.INTERNAL_SERVER_ERROR).build();
+        }
+    }
 
     @PostMapping("/methods")
     public ResponseEntity<PaymentMethodMessageResponse> addPaymentMethod(

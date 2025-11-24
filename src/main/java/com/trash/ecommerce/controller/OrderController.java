@@ -52,20 +52,4 @@ public class OrderController {
             return ResponseEntity.status(HttpStatus.INTERNAL_SERVER_ERROR).build();
         }
     }
-
-    @PostMapping("/{orderId}/checkout")
-    public ResponseEntity<OrderMessageResponseDTO> checkoutOrder(
-            @RequestHeader("Authorization") String token,
-            @PathVariable Long orderId,
-            HttpServletRequest request) {
-        try {
-            Long userId = jwtService.extractId(token);
-            String ipAddress = userService.getClientIpAddress(request);
-            OrderMessageResponseDTO response = orderService.checkOutOrder(userId, orderId, ipAddress);
-            return ResponseEntity.ok(response);
-        } catch (Exception e) {
-            logger.error("Adding order has some errors", e);
-            return ResponseEntity.status(HttpStatus.INTERNAL_SERVER_ERROR).build();
-        }
-    }
 }

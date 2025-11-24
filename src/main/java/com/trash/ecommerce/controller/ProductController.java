@@ -47,7 +47,7 @@ public class ProductController {
         }
     }
     
-    @GetMapping("/products")
+    @GetMapping("/")
     public ResponseEntity<List<ProductDetailsResponseDTO>> getAllProduct(
         @RequestParam(defaultValue = "0") int noPage,
         @RequestParam(defaultValue = "30") int sizePage

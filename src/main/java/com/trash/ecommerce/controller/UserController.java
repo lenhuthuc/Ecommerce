@@ -7,6 +7,8 @@ import java.util.Map;
 import com.trash.ecommerce.dto.*;
 import com.trash.ecommerce.service.JwtService;
 import io.jsonwebtoken.ExpiredJwtException;
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.http.HttpStatus;
 import org.springframework.http.ResponseEntity;
@@ -35,6 +37,7 @@ import org.springframework.web.bind.annotation.PathVariable;
 @RestController
 @RequestMapping("/api/user")
 public class UserController {
+    private Logger logger = LoggerFactory.getLogger(ReviewController.class);
     @Autowired
     private UserService userService;
     @Autowired
@@ -54,7 +57,7 @@ public class UserController {
         
     }
 
-    @PostMapping("/register")
+    @PostMapping("auth/register")
     public ResponseEntity<UserRegisterResponseDTO> createUser(
         @Valid @RequestBody UserRegisterRequestDTO userRegisterRequestDTO,
         BindingResult result  
@@ -71,12 +74,12 @@ public class UserController {
             userRegisterResponseDTO = userService.register(userRegisterRequestDTO);
             return ResponseEntity.ok(userRegisterResponseDTO);
         } catch (Exception e) {
-            userRegisterResponseDTO.setMessage(e.getMessage());
-            return ResponseEntity.badRequest().body(userRegisterResponseDTO);
+            logger.error("Đăng kí thất bại ",e);
+            return ResponseEntity.status(HttpStatus.INTERNAL_SERVER_ERROR).build();
         }
     }
     
-    @PostMapping("/login")
+    @PostMapping("auth/login")
     public ResponseEntity<UserLoginResponseDTO> login(@Valid @RequestBody UserLoginRequestDTO userLoginRequestDTO, 
     BindingResult result) {
         UserLoginResponseDTO userLoginResponseDTO = new UserLoginResponseDTO();
@@ -94,6 +97,20 @@ public class UserController {
         } catch (Exception e) {
             userLoginResponseDTO.setMessage(e.getMessage());
             return ResponseEntity.badRequest().body(userLoginResponseDTO);
+        }
+    }
+
+    @PostMapping("auth/logout")
+    public ResponseEntity<UserResponseDTO> logout(
+            @RequestHeader String token
+    ) {
+        Long userId = jwtService.extractId(token);
+        try {
+            com.trash.ecommerce.dto.UserResponseDTO userResponseDTO = userService.logout(userId);
+            return ResponseEntity.ok(userResponseDTO);
+        } catch (Exception e) {
+
+            return ResponseEntity.status(HttpStatus.INTERNAL_SERVER_ERROR).build();
         }
     }
 
@@ -123,9 +140,10 @@ public class UserController {
         }
     }
 
-    @PreAuthorize("hasRole('ADMIN')")
-    @GetMapping("/details")
-    public ResponseEntity<Users> findUser(@RequestParam(required = true) Long id) {
+    @GetMapping("/details/{id}")
+    public ResponseEntity<Users> findUser(
+            @PathVariable Long id
+    ) {
         try {
             Users user = userService.findUsersById(id);
             return ResponseEntity.ok(user);
@@ -149,9 +167,14 @@ public class UserController {
     }
 
     @GetMapping("/profile")
-    public ResponseEntity<UserProfileDTO> getProfile(@RequestHeader String token) {
+    public ResponseEntity<UserProfileDTO> getProfile(
+            @RequestHeader("Authorization") String token
+    ) {
+        Long userId = jwtService.extractId(token);
+
         try {
-            UserProfileDTO userProfileDTO = userService.getOwnProfile(token);
+            System.out.println(token);
+            UserProfileDTO userProfileDTO = userService.getOwnProfile(userId);
             return ResponseEntity.ok(userProfileDTO);
         } catch (Exception e) {
             throw new FindingUserError(e.getMessage());

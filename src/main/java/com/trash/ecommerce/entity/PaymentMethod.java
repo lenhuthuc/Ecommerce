@@ -1,21 +1,22 @@
 package com.trash.ecommerce.entity;
 
+import java.util.HashSet;
 import java.util.Set;
 
 import jakarta.persistence.*;
-import lombok.AllArgsConstructor;
-import lombok.Data;
-import lombok.NoArgsConstructor;
+import lombok.*;
 
 @AllArgsConstructor
 @NoArgsConstructor
-@Data
+@Getter
+@Setter
 @Entity
 @Table(name = "payment_method")
 public class PaymentMethod {
 
     @Id
     @GeneratedValue(strategy = GenerationType.IDENTITY)
+    @EqualsAndHashCode.Include
     private Long id;
 
     @Column(nullable = false)
@@ -27,7 +28,7 @@ public class PaymentMethod {
             CascadeType.DETACH, CascadeType.REFRESH }, 
         mappedBy = "paymentMethods"
     )
-    private Set<Users> users;
+    private Set<Users> users = new HashSet<>();
 
     @OneToMany(
         fetch = FetchType.LAZY, 
@@ -35,11 +36,13 @@ public class PaymentMethod {
             CascadeType.DETACH, CascadeType.REFRESH }, 
         mappedBy = "paymentMethod"
     )
-    private Set<Invoice> invoices;
+    private Set<Invoice> invoices = new HashSet<>();
 
-    @OneToOne(
+    @OneToMany(
             fetch = FetchType.LAZY,
+            cascade = { CascadeType.PERSIST, CascadeType.MERGE,
+                    CascadeType.DETACH, CascadeType.REFRESH },
             mappedBy = "paymentMethod"
     )
-    private Set<Order> orders;
+    private Set<Order> orders = new HashSet<>();
 }

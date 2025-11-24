@@ -12,6 +12,7 @@ import com.trash.ecommerce.repository.OrderRepository;
 import com.trash.ecommerce.repository.PaymentMethodRepository;
 import com.trash.ecommerce.repository.UserRepository;
 import org.springframework.beans.factory.annotation.Autowired;
+import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 
 import java.math.BigDecimal;
@@ -19,6 +20,7 @@ import java.util.Date;
 import java.util.HashSet;
 import java.util.Set;
 
+@Service
 public class InvoiceServiceImpl implements InvoiceService {
     @Autowired
     private InvoiceRepository invoiceRepository;
@@ -71,9 +73,6 @@ public class InvoiceServiceImpl implements InvoiceService {
         if (!invoice.getUser().getId().equals(userId)) {
             throw new InvoiceNotFoundException("Invoice not found for this user");
         }
-
-        invoiceItemService.deleteInvoiceItemsByInvoiceId(invoiceId);
-
         invoiceRepository.delete(invoice);
     }
 

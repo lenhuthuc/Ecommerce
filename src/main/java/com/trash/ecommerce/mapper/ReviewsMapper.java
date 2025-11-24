@@ -9,6 +9,8 @@ import org.springframework.stereotype.Component;
 public class ReviewsMapper {
     public ReviewResponse mapReview (Review review) {
         return new ReviewResponse(
+                review.getUser().getId(),
+                review.getProduct().getId(),
                 review.getRating(),
                 review.getContent()
         );

@@ -1,5 +1,6 @@
 package com.trash.ecommerce.service;
 
+import java.util.HashSet;
 import java.util.List;
 import java.util.Objects;
 import java.util.Set;
@@ -8,6 +9,8 @@ import java.util.stream.Collectors;
 
 import com.trash.ecommerce.config.RedisConfig;
 import com.trash.ecommerce.dto.*;
+import com.trash.ecommerce.entity.Role;
+import com.trash.ecommerce.exception.FindingUserError;
 import jakarta.servlet.http.HttpServletRequest;
 import org.springframework.data.domain.Page;
 import org.springframework.beans.factory.annotation.Autowired;
@@ -64,11 +67,13 @@ public class UserServiceImpl implements UserService {
         tmpUser.setEmail(user.getEmail());
         String password = en.encode(user.getPassword());
         tmpUser.setPassword(password);
-        tmpUser.setRoles(Set.of(roleService.findRoleByName("USER")));
+        Set<Role> roles = new HashSet<>();
+        roles.add(roleService.findRoleByName("USER"));
+        tmpUser.setRoles(roles);
         Cart cart = new Cart();
         cart.setUser(tmpUser);
-        cartRepository.save(cart);
         tmpUser.setCart(cart);
+        cartRepository.save(cart);
         userRepository.save(tmpUser);
         return new UserRegisterResponseDTO("Đăng kí thành công");
     }
@@ -86,13 +91,21 @@ public class UserServiceImpl implements UserService {
     }
 
     @Override
+    public UserResponseDTO logout(Long userId) {
+        Users users = userRepository.findById(userId)
+                .orElseThrow(() -> new FindingUserError("User not found"));
+        String key = "otp:" + users.getEmail();
+        redisTemplate.delete(key);
+        return new UserResponseDTO("Success");
+    }
+
+    @Override
     public Users findUsersById(Long id) {
         return userRepository.findById(id).orElseThrow(() -> new RuntimeException("Không tìm thấy người dùng"));
     }
 
     @Override
-    public UserProfileDTO getOwnProfile(String token) {
-        Long id = jwtService.extractId(token);
+    public UserProfileDTO getOwnProfile(Long id) {
         Users user = userRepository.findById(id)
                         .orElseThrow(() -> new RuntimeException("User is not found"));
         UserProfileDTO userProfileDTO = new UserProfileDTO();

@@ -9,6 +9,7 @@ import org.springframework.security.authentication.AuthenticationProvider;
 import org.springframework.security.authentication.dao.DaoAuthenticationProvider;
 import org.springframework.security.config.annotation.authentication.configuration.AuthenticationConfiguration;
 import org.springframework.security.config.annotation.web.builders.HttpSecurity;
+import org.springframework.security.config.annotation.web.configuration.EnableWebSecurity;
 import org.springframework.security.config.http.SessionCreationPolicy;
 import org.springframework.security.core.userdetails.UserDetailsService;
 import org.springframework.security.crypto.bcrypt.BCryptPasswordEncoder;
@@ -16,30 +17,24 @@ import org.springframework.security.crypto.password.PasswordEncoder;
 import org.springframework.security.web.SecurityFilterChain;
 import org.springframework.security.web.authentication.UsernamePasswordAuthenticationFilter;
 
-@Configurable
 @Configuration
+@EnableWebSecurity
 public class SecurityConfig {
     @Autowired
     private JwtFilter jwtFilter;
     @Bean
     public SecurityFilterChain securityFilterChain(HttpSecurity http) throws Exception {
-        
+
         return http
                 .csrf(customize -> customize.disable())
-                .authorizeHttpRequests(
-                    auth -> auth
-                            .requestMatchers("/admin/**").hasRole("admin")
-                            .requestMatchers("/users").hasRole("user")
-                            .requestMatchers("/login", "registor").permitAll()
-                            .anyRequest().authenticated()
+                .authorizeHttpRequests(auth -> auth
+                        .requestMatchers("/api/user/profile","/api/user/auth/login", "/api/user/auth/register", "/api/user/auth/logout").permitAll()
+                        .requestMatchers("/api/products/**", "/api/payments/vnpay/**").permitAll()
+                        .requestMatchers("/api/admin/**").hasRole("ADMIN")
+                        .requestMatchers("/api/user/**").hasRole("USER")
+                        .anyRequest().authenticated()
                 )
-                .formLogin(form -> form
-                .loginPage("/login")   // URL form login tự tạo
-                .loginProcessingUrl("/perform_login") // URL Spring xử lý POST
-                .defaultSuccessUrl("/home", true)     // redirect sau login
-                .permitAll()
-                )
-                .logout(logout -> logout.permitAll())
+                .formLogin(login -> login.disable())
                 .sessionManagement(session -> session.sessionCreationPolicy(SessionCreationPolicy.STATELESS))
                 .addFilterBefore(jwtFilter, UsernamePasswordAuthenticationFilter.class)
                 .build();

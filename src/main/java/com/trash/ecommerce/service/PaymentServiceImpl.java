@@ -8,6 +8,7 @@ import java.util.*;
 
 import com.trash.ecommerce.config.PaymentHashGenerator;
 import com.trash.ecommerce.config.VnPayConfig;
+import com.trash.ecommerce.dto.OrderRequest;
 import com.trash.ecommerce.dto.PaymentMethodMessageResponse;
 import com.trash.ecommerce.dto.PaymentMethodResponse;
 import com.trash.ecommerce.entity.*;
@@ -36,11 +37,11 @@ public class PaymentServiceImpl implements PaymentService {
     @Autowired
     private OrderRepository orderRepository;
     @Autowired
-    private CartRepository cartRepository;
-    @Autowired
     private CartItemService cartItemService;
     @Autowired
-    private OrderService orderService;
+    private EmailService emailService;
+    @Autowired
+    private InvoiceService invoiceService;
 
     @Override
     public PaymentMethodMessageResponse addPaymentMethod(Long userId, String name) {
@@ -56,7 +57,9 @@ public class PaymentServiceImpl implements PaymentService {
     }
 
     @Override
-    public String createPaymentUrl(BigDecimal total_price, String orderInfo, Order order, String ipAddress) {
+    public String createPaymentUrl(BigDecimal total_price, String orderInfo, Long orderId, String ipAddress) {
+        Order order = orderRepository.findById(orderId)
+                .orElseThrow(() -> new OrderExistsException("Order not found"));
         String vnp_Version = "2.1.0";
             String vnp_Command = "pay";
             String vnp_OrderInfo = orderInfo;
@@ -165,6 +168,7 @@ public class PaymentServiceImpl implements PaymentService {
 
             Order order = orderRepository.findById(Long.valueOf(fields.get("vnp_TxnRef")))
                     .orElseThrow(() -> new OrderExistsException("Order not found"));
+            Long orderId = order.getId();
             long vnpAmount = Long.parseLong(fields.get("vnp_Amount")) / 100;
             boolean checkAmount = order.getTotalPrice().equals(BigDecimal.valueOf(vnpAmount));
             boolean checkOrderStatus = order.getStatus() == OrderStatus.PENDING;
@@ -178,7 +182,34 @@ public class PaymentServiceImpl implements PaymentService {
                     {
                         if ("00".equals(request.getParameter("vnp_ResponseCode")))
                         {
-                            orderService.finalizeOrder(Long.valueOf(fields.get("vnp_TxnRef")));
+                            Users user = order.getUser();
+                            Long userId = user.getId();
+                            order.setStatus(OrderStatus.PAID);
+                            Cart cart = user.getCart();
+                            for(CartItem cartItem : cart.getItems()) {
+                                Product product = cartItem.getProduct();
+                                if (product.getQuantity() - cartItem.getQuantity() >= 0) {
+                                    product.setQuantity(product.getQuantity() - cartItem.getQuantity());
+                                } else {
+                                    throw new ProductQuantityValidation("Quantity is invalidation !");
+                                }
+                                cartItemService.removeItemOutOfCart(user.getId(), cartItem.getProduct().getId());
+                            }
+                            orderRepository.save(order);
+                            String subject = "Confirm the order transaction";
+                            String body = String.format(
+                                    "Hi %s!\n\n" +
+                                            "We’ve successfully received your order #%s, and it’s now on its way to your doorstep " +
+                                            "(unless the universe decides to play tricks, but let’s hope not 😅).\n\n" +
+                                            "Get ready to enjoy your purchase soon! If anything goes wrong, don’t worry — our team is armed " +
+                                            "with coffee and a few clicks of magic 💻☕.\n\n" +
+                                            "Thanks for choosing us and placing your order — you just helped us secure our morning caffeine fix!\n\n" +
+                                            "Cheers,\n" +
+                                            "The Shop Team",
+                                    user.getEmail(), orderId
+                            );
+                            emailService.sendEmail(user.getEmail(), subject, body);
+                            invoiceService.createInvoice(userId, orderId, order.getPaymentMethod().getId());
                         }
                         else
                         {
