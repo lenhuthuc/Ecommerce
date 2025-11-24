@@ -49,10 +49,10 @@ public class ReviewServiceImpl implements ReviewService {
     }
 
     @Override
-    public List<ReviewRepository> findReviewByProductId(Long productId) {
-        List<ReviewRepository> reviews = reviewRepository.findByProductId(productId)
+    public List<ReviewResponse> findReviewByProductId(Long productId) {
+        List<ReviewResponse> reviews = reviewRepository.findByProductId(productId)
                 .stream()
-                .map(review -> (ReviewRepository) reviewsMapper.mapReview(review))
+                .map(review -> (ReviewResponse) reviewsMapper.mapReview(review))
                 .toList();
         return reviews;
     }

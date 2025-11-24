@@ -8,6 +8,7 @@ import java.util.stream.Collectors;
 
 import com.trash.ecommerce.config.RedisConfig;
 import com.trash.ecommerce.dto.*;
+import jakarta.servlet.http.HttpServletRequest;
 import org.springframework.data.domain.Page;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.data.domain.PageRequest;
@@ -173,5 +174,14 @@ public class UserServiceImpl implements UserService {
         newPassword = en.encode(newPassword);
         user.setPassword(newPassword);
         return new UserResponseDTO("Change password successfully");
+    }
+
+    @Override
+    public String getClientIpAddress(HttpServletRequest request) {
+        String xForwardedFor = request.getHeader("X-Forwarded-For");
+        if (xForwardedFor != null && !xForwardedFor.isEmpty()) {
+            return xForwardedFor.split(",")[0];
+        }
+        return request.getRemoteAddr();
     }
 }

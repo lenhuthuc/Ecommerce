@@ -10,5 +10,5 @@ import java.util.List;
 public interface ReviewService {
     public ReviewResponse createComment(Long userId, Long productId, ReviewRequest review);
     public void deleteComment(Long userId, Long productId, Long reviewId);
-    public List<ReviewRepository> findReviewByProductId(Long productId);
+    public List<ReviewResponse> findReviewByProductId(Long productId);
 }

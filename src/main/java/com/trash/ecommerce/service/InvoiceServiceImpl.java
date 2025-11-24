@@ -3,6 +3,7 @@ package com.trash.ecommerce.service;
 import com.trash.ecommerce.dto.InvoiceResponse;
 import com.trash.ecommerce.entity.*;
 import com.trash.ecommerce.exception.FindingUserError;
+import com.trash.ecommerce.exception.InvoiceNotFoundException;
 import com.trash.ecommerce.exception.OrderExistsException;
 import com.trash.ecommerce.exception.PaymentException;
 import com.trash.ecommerce.mapper.InvoiceMapper;
@@ -31,6 +32,7 @@ public class InvoiceServiceImpl implements InvoiceService {
     private PaymentMethodRepository paymentMethodRepository;
     @Autowired
     private InvoiceMapper invoiceMapper;
+
     @Override
     @Transactional
     public InvoiceResponse createInvoice(Long userId, Long orderId, Long paymentMethodId) {
@@ -58,7 +60,22 @@ public class InvoiceServiceImpl implements InvoiceService {
     }
 
     @Override
+    @Transactional
     public void deleteInvoice(Long userId, Long invoiceId) {
+        Users user = userRepository.findById(userId)
+                .orElseThrow(() -> new FindingUserError("User not found with id: " + userId));
 
+        Invoice invoice = invoiceRepository.findById(invoiceId)
+                .orElseThrow(() -> new InvoiceNotFoundException("Invoice not found with id: " + invoiceId));
+
+        if (!invoice.getUser().getId().equals(userId)) {
+            throw new InvoiceNotFoundException("Invoice not found for this user");
+        }
+
+        invoiceItemService.deleteInvoiceItemsByInvoiceId(invoiceId);
+
+        invoiceRepository.delete(invoice);
     }
+
+
 }

@@ -117,12 +117,12 @@ public class OrderServiceImpl implements OrderService {
     }
 
     @Override
-    public OrderMessageResponseDTO finalizeOrder(Long userId, Long orderId) {
+    public OrderMessageResponseDTO finalizeOrder(Long orderId) {
 
         Order order = orderRepository.findById(orderId)
                 .orElseThrow(() -> new OrderExistsException("Order not found"));
         Users user = order.getUser();
-        if(userId.equals(user.getId())) throw new OrderValidException("User not valid");
+        Long userId = user.getId();
         order.setStatus(OrderStatus.PAID);
         Cart cart = user.getCart();
         for(CartItem cartItem : cart.getItems()) {
@@ -132,7 +132,7 @@ public class OrderServiceImpl implements OrderService {
             } else {
                 throw new ProductQuantityValidation("Quantity is invalidation !");
             }
-            cartItemService.removeItemOutOfCart(user.getId(), cartItem.getId());
+            cartItemService.removeItemOutOfCart(user.getId(), cartItem.getProduct().getId());
         }
         orderRepository.save(order);
         String subject = "Confirm the order transaction";

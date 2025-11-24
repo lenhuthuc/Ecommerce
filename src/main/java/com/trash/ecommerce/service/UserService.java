@@ -10,6 +10,7 @@ import com.trash.ecommerce.dto.UserRegisterResponseDTO;
 import com.trash.ecommerce.dto.UserResponseDTO;
 import com.trash.ecommerce.dto.UserUpdateRequestDTO;
 import com.trash.ecommerce.entity.Users;
+import jakarta.servlet.http.HttpServletRequest;
 
 public interface UserService {
     public List<Users> findAllUser(int noPage, int sizePage);
@@ -22,4 +23,5 @@ public interface UserService {
     public UserResponseDTO resetPassword(String email);
     public boolean verifyDTO(String email, String OTP);
     public UserResponseDTO changePassword(String email, String newPassword);
+    public String getClientIpAddress(HttpServletRequest request);
 }

@@ -2,6 +2,8 @@ package com.trash.ecommerce.controller;
 
 import jakarta.annotation.Resource;
 import jdk.jfr.ContentType;
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
 import org.springframework.core.io.ClassPathResource;
 import org.springframework.core.io.UrlResource;
 import org.springframework.http.HttpStatus;
@@ -30,6 +32,7 @@ import org.springframework.web.multipart.MultipartFile;
 @RestController
 @RequestMapping("/api/product")
 public class ProductController {
+    private Logger logger = LoggerFactory.getLogger(ProductController.class);
     @Autowired
     private ProductService productService;
     @GetMapping("/{id}")

@@ -118,7 +118,8 @@ public class PaymentServiceImpl implements PaymentService {
         return vnPayConfig.getUrl() + "?" + queryUrl;
     }
 
-    public PaymentMethodResponse handleProcedurePayment(HttpServletRequest request, Long userId) {
+    @Override
+    public Map<String, String> hashFields(HttpServletRequest request) {
         Map<String, String> fields = new HashMap<>();
         Iterator<String> params = request.getParameterNames().asIterator();
         while (params.hasNext()) {
@@ -134,6 +135,30 @@ public class PaymentServiceImpl implements PaymentService {
         String vnp_SecureHash = request.getParameter("vnp_SecureHash");
         fields.remove("vnp_SecureHashType");
         fields.remove("vnp_SecureHash");
+        return fields;
+    }
+
+    @Override
+    public PaymentMethodMessageResponse handleProcedureUserInterface(HttpServletRequest request) {
+        Map<String, String> fields = hashFields(request);
+        String vnp_SecureHash = request.getParameter("vnp_SecureHash");
+        String signValue = paymentHashGenerator.hashAllFields(fields);
+        if (signValue.equals(vnp_SecureHash)) {
+            if ("00".equals(request.getParameter("vnp_ResponseCode"))) {
+                return new PaymentMethodMessageResponse("GD Thanh cong");
+            } else {
+                return new PaymentMethodMessageResponse("GD Khong thanh cong");
+            }
+
+        } else {
+            return new PaymentMethodMessageResponse("Chu ky khong hop le");
+        }
+    }
+
+    @Override
+    public PaymentMethodResponse handleProcedurePayment(HttpServletRequest request) {
+        Map<String, String> fields = hashFields(request);
+        String vnp_SecureHash = request.getParameter("vnp_SecureHash");
         String signValue = paymentHashGenerator.hashAllFields(fields);
         if (signValue.equals(vnp_SecureHash))
         {
@@ -153,7 +178,7 @@ public class PaymentServiceImpl implements PaymentService {
                     {
                         if ("00".equals(request.getParameter("vnp_ResponseCode")))
                         {
-                            orderService.finalizeOrder(userId, Long.valueOf(fields.get("vnp_TxnRef")));
+                            orderService.finalizeOrder(Long.valueOf(fields.get("vnp_TxnRef")));
                         }
                         else
                         {

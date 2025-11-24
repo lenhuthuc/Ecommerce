@@ -2,8 +2,8 @@ package com.trash.ecommerce.controller;
 
 import com.trash.ecommerce.dto.CartItemDetailsResponseDTO;
 import com.trash.ecommerce.dto.CartItemTransactionalResponse;
-import com.trash.ecommerce.service.CartItemService;
 import com.trash.ecommerce.service.CartService;
+import com.trash.ecommerce.service.CartItemService;
 import com.trash.ecommerce.service.JwtService;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
@@ -15,68 +15,56 @@ import org.springframework.web.bind.annotation.*;
 import java.util.List;
 
 @RestController
-@RequestMapping("/cart")
+@RequestMapping("/api/cart")
 public class CartController {
-    private static final Logger logger = LoggerFactory.getLogger(CartController.class);
+
+    private Logger logger = LoggerFactory.getLogger(CartController.class);
     @Autowired
     private CartService cartService;
+
     @Autowired
     private CartItemService cartItemService;
+
     @Autowired
     private JwtService jwtService;
 
-    public CartController(CartService cartService) {
-        this.cartService = cartService;
-    }
-
-    @GetMapping("/")
-    public ResponseEntity<List<CartItemDetailsResponseDTO>> getAllItem(
-            @RequestHeader("Authorization") String token
-    ) {
+    @GetMapping("/items")
+    public ResponseEntity<List<CartItemDetailsResponseDTO>> getCartItems(@RequestHeader("Authorization") String token) {
         try {
             Long userId = jwtService.extractId(token);
-            if (userId != null) {
-                List<CartItemDetailsResponseDTO> cart = cartService.getAllItemFromMyCart(userId);
-                return ResponseEntity.ok(cart);
-            } else {
-                return ResponseEntity.status(HttpStatus.UNAUTHORIZED).build();
-            }
-
+            List<CartItemDetailsResponseDTO> cartItems = cartService.getAllItemFromMyCart(userId);
+            return ResponseEntity.ok(cartItems);
         } catch (Exception e) {
-            logger.error("Lỗi khi lấy giỏ hàng: ", e);
+            logger.error("Get item has errors", e);
             return ResponseEntity.status(HttpStatus.INTERNAL_SERVER_ERROR).build();
         }
     }
 
-    @PutMapping("/push/{id}")
-    public ResponseEntity<CartItemTransactionalResponse> pushProductToCart(
-            @RequestHeader("token") String token,
-            @RequestParam(value = "quantity", defaultValue = "1") Long quantity,
-            @PathVariable("id") Long id
-    ) {
+    @PutMapping("/items/{productId}")
+    public ResponseEntity<CartItemTransactionalResponse> updateCartItem(
+            @RequestHeader("Authorization") String token,
+            @PathVariable Long productId,
+            @RequestParam Long quantity) {
         try {
             Long userId = jwtService.extractId(token);
-            if(userId == null) return ResponseEntity.status(HttpStatus.UNAUTHORIZED).build();
-            CartItemTransactionalResponse item = cartItemService.updateQuantityCartItem(userId, quantity, id);
-            return ResponseEntity.ok(item);
+            CartItemTransactionalResponse response = cartItemService.updateQuantityCartItem(userId, quantity, productId);
+            return ResponseEntity.ok(response);
         } catch (Exception e) {
-            logger.error("Error when push product into cart",e);
+            logger.error("add product failed", e);
             return ResponseEntity.status(HttpStatus.INTERNAL_SERVER_ERROR).build();
         }
     }
 
-    @DeleteMapping("/{id}")
-    public ResponseEntity<CartItemTransactionalResponse> deleteProductToCart(
-            @RequestHeader("token") String token,
-            @PathVariable("id") Long id
-    ) {
+    @DeleteMapping("/items/{productId}")
+    public ResponseEntity<CartItemTransactionalResponse> removeCartItem(
+            @RequestHeader("Authorization") String token,
+            @PathVariable Long productId) {
         try {
             Long userId = jwtService.extractId(token);
-            if(userId == null) return ResponseEntity.status(HttpStatus.UNAUTHORIZED).build();
-            CartItemTransactionalResponse item = cartItemService.removeItemOutOfCart(userId, id);
-            return ResponseEntity.ok(item);
+            CartItemTransactionalResponse response = cartItemService.removeItemOutOfCart(userId, productId);
+            return ResponseEntity.ok(response);
         } catch (Exception e) {
-            logger.error("Error when push product into cart",e);
+            logger.error("delete product from cart has failed", e);
             return ResponseEntity.status(HttpStatus.INTERNAL_SERVER_ERROR).build();
         }
     }
