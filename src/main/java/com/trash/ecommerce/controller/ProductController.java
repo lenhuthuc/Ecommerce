@@ -1,32 +1,23 @@
 package com.trash.ecommerce.controller;
 
-import jakarta.annotation.Resource;
-import jdk.jfr.ContentType;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
-import org.springframework.core.io.ClassPathResource;
 import org.springframework.core.io.UrlResource;
 import org.springframework.http.HttpStatus;
 import org.springframework.http.MediaType;
 import org.springframework.web.bind.annotation.*;
 
 import com.trash.ecommerce.dto.ProductDetailsResponseDTO;
-import com.trash.ecommerce.dto.ProductRequireDTO;
-import com.trash.ecommerce.dto.ProductResponseDTO;
-import com.trash.ecommerce.exception.ProductCreatingException;
 import com.trash.ecommerce.exception.ProductFingdingException;
 import com.trash.ecommerce.service.ProductService;
 
 import java.io.IOException;
-import java.net.MalformedURLException;
 import java.nio.file.Path;
 import java.nio.file.Paths;
 import java.util.List;
 
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.http.ResponseEntity;
-import org.springframework.security.access.prepost.PreAuthorize;
-import org.springframework.web.multipart.MultipartFile;
 
 
 @RestController
@@ -74,47 +65,6 @@ public class ProductController {
         }
     }
 
-    @PostMapping("/add")
-    @PreAuthorize("hasRole('ADMIN')")
-    public ResponseEntity<ProductResponseDTO> addProduct(
-        @RequestBody ProductRequireDTO productRequireDTO,
-        @RequestParam("file") MultipartFile file
-        ) {
-       try {
-         ProductResponseDTO productResponseDTO = productService.createProduct(productRequireDTO, file);
-         return ResponseEntity.ok(productResponseDTO);
-       } catch (Exception e) {
-         throw new ProductCreatingException(e.getMessage());
-       }
-    }
-    
-    @PutMapping("/update/{id}")
-    @PreAuthorize("hasRole('ADMIN')")
-    public ResponseEntity<ProductResponseDTO> updateProduct(
-        @RequestBody ProductRequireDTO productRequireDTO,
-        @PathVariable Long id,
-        @RequestParam("file") MultipartFile file
-        ) {
-       try {
-         ProductResponseDTO productResponseDTO = productService.updateProduct(productRequireDTO, id, file);
-         return ResponseEntity.ok(productResponseDTO);
-       } catch (Exception e) {
-         throw new ProductCreatingException(e.getMessage());
-       }
-    }
-
-    @DeleteMapping("/delete/{id}")
-    @PreAuthorize("hasRole('ADMIN')")
-    public ResponseEntity<ProductResponseDTO> updateProduct(
-        @PathVariable Long id
-        ) {
-       try {
-         ProductResponseDTO productResponseDTO = productService.deleteProductById(id);
-         return ResponseEntity.ok(productResponseDTO);
-       } catch (Exception e) {
-         throw new ProductCreatingException(e.getMessage());
-       }
-    }
 
     @GetMapping("/products/{id}/img")
     public ResponseEntity<?> getProductImg(

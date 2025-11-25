@@ -42,20 +42,6 @@ public class UserController {
     private UserService userService;
     @Autowired
     private JwtService jwtService;
-    @PreAuthorize("hasRole('ADMIN')")
-    @GetMapping("/users")
-    public ResponseEntity<List<Users>> getAllUsers(
-        @RequestParam(value = "noPage", defaultValue = "0", required = false) int noPage,
-        @RequestParam(value = "sizePage", defaultValue = "20", required = false) int sizePage
-    ) {
-        try {
-            List<Users> users = userService.findAllUser(noPage, sizePage);
-            return ResponseEntity.ok(users);
-        } catch (Exception e) {
-            throw new FindingUserError(e.getMessage());
-        }
-        
-    }
 
     @PostMapping("auth/register")
     public ResponseEntity<UserRegisterResponseDTO> createUser(
@@ -114,16 +100,16 @@ public class UserController {
         }
     }
 
-    @PreAuthorize("hasRole('ADMIN') or hasRole('USER')")
     @PutMapping("/updation/{id}")
     public ResponseEntity<UserResponseDTO> putMethodName(
-        @PathVariable String id, 
-        @RequestHeader String token,
+        @PathVariable Long id,
+        @RequestHeader("Authorization") String token,
         @Valid @RequestBody UserUpdateRequestDTO userUpdateRequestDTO,
         BindingResult result
     ) {
         UserResponseDTO userResponseDTO = new UserResponseDTO();
         if(result.hasErrors()) {
+            System.out.println(">>>>putMethodName has some errors");
             Map<String, String> errors = new HashMap<>();
             result.getFieldErrors().forEach(
                 error -> errors.put(error.getField(), error.getDefaultMessage())
@@ -132,37 +118,12 @@ public class UserController {
             return ResponseEntity.badRequest().body(userResponseDTO);
         }
         try {
-            userResponseDTO = userService.updateUser(userUpdateRequestDTO, Long.parseLong(id), token);
+            Long userId = jwtService.extractId(token);
+            userResponseDTO = userService.updateUser(userUpdateRequestDTO, id, userId);
             return ResponseEntity.ok(userResponseDTO);
         } catch (Exception e) {
             userResponseDTO.setMessage(e.getMessage());
             return ResponseEntity.badRequest().body(userResponseDTO);
-        }
-    }
-
-    @GetMapping("/details/{id}")
-    public ResponseEntity<Users> findUser(
-            @PathVariable Long id
-    ) {
-        try {
-            Users user = userService.findUsersById(id);
-            return ResponseEntity.ok(user);
-        } catch (Exception e) {
-            throw new FindingUserError(e.getMessage());
-        }
-    }
-    
-    @PreAuthorize("hasRole('ADMIN')")
-    @DeleteMapping("/removation")
-    public ResponseEntity<UserResponseDTO> deleteUser(
-        @RequestParam(required = true) Long id,
-        @RequestHeader String token
-    ) {
-        try {
-            userService.deleteUser(id, token);
-            return ResponseEntity.ok(new UserResponseDTO("Succesful"));
-        } catch (Exception e) {
-            throw new FindingUserError(e.getMessage());
         }
     }
 
@@ -171,9 +132,9 @@ public class UserController {
             @RequestHeader("Authorization") String token
     ) {
         Long userId = jwtService.extractId(token);
-
+        System.out.println("getProfile");
         try {
-            System.out.println(token);
+
             UserProfileDTO userProfileDTO = userService.getOwnProfile(userId);
             return ResponseEntity.ok(userProfileDTO);
         } catch (Exception e) {

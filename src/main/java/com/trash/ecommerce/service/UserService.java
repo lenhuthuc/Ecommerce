@@ -13,13 +13,13 @@ import com.trash.ecommerce.entity.Users;
 import jakarta.servlet.http.HttpServletRequest;
 
 public interface UserService {
-    public List<Users> findAllUser(int noPage, int sizePage);
+    public List<UserProfileDTO> findAllUser(int noPage, int sizePage);
     public UserRegisterResponseDTO register(UserRegisterRequestDTO user);
     public UserLoginResponseDTO login(UserLoginRequestDTO user);
     public UserResponseDTO logout(Long userId);
     public Users findUsersById(Long id);
     public UserProfileDTO getOwnProfile(Long userId);
-    public UserResponseDTO  updateUser(UserUpdateRequestDTO  user, Long id, String token);
+    public UserResponseDTO  updateUser(UserUpdateRequestDTO  user, Long id, Long userId);
     public void deleteUser(Long id, String token);
     public UserResponseDTO resetPassword(String email);
     public boolean verifyDTO(String email, String OTP);

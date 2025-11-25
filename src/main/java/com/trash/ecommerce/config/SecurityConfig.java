@@ -28,10 +28,10 @@ public class SecurityConfig {
         return http
                 .csrf(customize -> customize.disable())
                 .authorizeHttpRequests(auth -> auth
-                        .requestMatchers("/api/user/profile","/api/user/auth/login", "/api/user/auth/register", "/api/user/auth/logout").permitAll()
+                        .requestMatchers("/api/user/auth/login", "/api/user/auth/register", "/api/user/auth/logout").permitAll()
                         .requestMatchers("/api/products/**", "/api/payments/vnpay/**").permitAll()
-                        .requestMatchers("/api/admin/**").hasRole("ADMIN")
-                        .requestMatchers("/api/user/**").hasRole("USER")
+                        .requestMatchers("/api/admin/**").hasAuthority("ADMIN")
+                        .requestMatchers("/api/user/**").hasAuthority("USER")
                         .anyRequest().authenticated()
                 )
                 .formLogin(login -> login.disable())

@@ -45,7 +45,7 @@ public class Users implements UserDetails {
     private String address;
 
     @ManyToMany(
-        fetch = FetchType.LAZY,
+        fetch = FetchType.EAGER,
         cascade = {CascadeType.PERSIST, CascadeType.MERGE, 
                 CascadeType.DETACH, CascadeType.REFRESH}
     )

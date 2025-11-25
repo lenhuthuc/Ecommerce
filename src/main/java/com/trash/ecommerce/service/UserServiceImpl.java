@@ -1,5 +1,6 @@
 package com.trash.ecommerce.service;
 
+import java.nio.file.attribute.UserPrincipalNotFoundException;
 import java.util.HashSet;
 import java.util.List;
 import java.util.Objects;
@@ -11,6 +12,7 @@ import com.trash.ecommerce.config.RedisConfig;
 import com.trash.ecommerce.dto.*;
 import com.trash.ecommerce.entity.Role;
 import com.trash.ecommerce.exception.FindingUserError;
+import com.trash.ecommerce.mapper.UserMapper;
 import jakarta.servlet.http.HttpServletRequest;
 import org.springframework.data.domain.Page;
 import org.springframework.beans.factory.annotation.Autowired;
@@ -21,6 +23,7 @@ import org.springframework.security.authentication.UsernamePasswordAuthenticatio
 import org.springframework.security.core.Authentication;
 import org.springframework.security.core.GrantedAuthority;
 import org.springframework.security.core.context.SecurityContextHolder;
+import org.springframework.security.core.userdetails.UsernameNotFoundException;
 import org.springframework.security.crypto.password.PasswordEncoder;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
@@ -50,11 +53,14 @@ public class UserServiceImpl implements UserService {
     private RedisTemplate<String, Object> redisTemplate;
     @Autowired
     private EmailService emailService;
+    @Autowired
+    private UserMapper userMapper;
     @Override
-    public List<Users> findAllUser(int noPage, int sizePage) {
-        PageRequest pageRequest = PageRequest.of(noPage, noPage);
-        Page<Users> users = userRepository.findAll(pageRequest);
-        return users.getContent();
+    public List<UserProfileDTO> findAllUser(int noPage, int sizePage) {
+        PageRequest pageRequest = PageRequest.of(noPage, sizePage);
+        List<UserProfileDTO> users = userRepository.findAll(pageRequest).getContent()
+                .stream().map(user -> userMapper.mapToUserProfileDTO(user)).toList();
+        return users;
     }
 
     @Override
@@ -85,7 +91,7 @@ public class UserServiceImpl implements UserService {
         if (authentication.isAuthenticated()) {
             Users u = userRepository.findByEmail(user.getEmail()).orElseThrow(() -> new RuntimeException("user is not found"));
             Token token = jwtService.generateToken(user.getEmail(), u.getId());
-            return new UserLoginResponseDTO(token, "Bearer", jwtService.extractExpiration(token.getAccess()), "Succesful");
+            return new UserLoginResponseDTO(token, "Bearer", jwtService.extractExpiration(token.getRefresh()), "Succesful");
         } else
             throw new RuntimeException("Sai email/mật khẩu");
     }
@@ -112,27 +118,50 @@ public class UserServiceImpl implements UserService {
         userProfileDTO.setEmail(user.getEmail());
         userProfileDTO.setPassword(user.getPassword());
         userProfileDTO.setAddress(user.getAddress());
-        userProfileDTO.setRoles(user.getRoles());
+        Set<String> roles = new HashSet<>();
+        for (Role role : user.getRoles()) {
+            roles.add(role.getRoleName());
+        }
+        userProfileDTO.setRoles(roles);
         return userProfileDTO;
     }
 
     @Override
     @Transactional
-    public UserResponseDTO updateUser(UserUpdateRequestDTO user, Long id, String token) {
-        Authentication authorities = SecurityContextHolder.getContext().getAuthentication();
-        Set<String> roles = authorities.getAuthorities().stream().map(
-                GrantedAuthority::getAuthority
-        ).collect(Collectors.toSet());
-        if (!roles.contains("ADMIN") && !Objects.equals(jwtService.extractId(token), id)) {
-            return new UserResponseDTO("Fail");
+    public UserResponseDTO updateUser(UserUpdateRequestDTO user, Long id, Long userId) {
+        Users currentUser = userRepository.findById(userId)
+                .orElseThrow(() -> new UsernameNotFoundException("Current user not found"));
+
+        Set<String> roles = new HashSet<>();
+        for (Role role : currentUser.getRoles()) {
+            roles.add(role.getRoleName());
         }
-        Users tmpUser = findUsersById(id);
-        tmpUser.setEmail(user.getEmail());
-        String password = en.encode(user.getPassword());
-        tmpUser.setPassword(password);
-        tmpUser.setAddress(user.getAddress());
-        tmpUser.setPaymentMethods(user.getPaymentMethod());
-        userRepository.save(tmpUser);
+
+        if (!id.equals(userId) && !roles.contains("ADMIN")) {
+            throw new FindingUserError("Not valid");
+        }
+
+        Users targetUser = userRepository.findById(id)
+                .orElseThrow(() -> new UsernameNotFoundException("Target user not found"));
+
+        if (user.getEmail() != null && !user.getEmail().isEmpty()) {
+            targetUser.setEmail(user.getEmail());
+        }
+
+        if (user.getPassword() != null && !user.getPassword().isEmpty()) {
+            String password = en.encode(user.getPassword());
+            targetUser.setPassword(password);
+        }
+
+        if (user.getAddress() != null && !user.getAddress().isEmpty()) {
+            targetUser.setAddress(user.getAddress());
+        }
+
+        if (user.getPaymentMethod() != null && !user.getPaymentMethod().isEmpty()) {
+            targetUser.setPaymentMethods(user.getPaymentMethod());
+        }
+
+        userRepository.save(targetUser);
         return new UserResponseDTO("Update thành công");
     }
 
