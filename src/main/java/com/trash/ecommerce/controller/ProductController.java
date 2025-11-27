@@ -21,7 +21,7 @@ import org.springframework.http.ResponseEntity;
 
 
 @RestController
-@RequestMapping("/api/product")
+@RequestMapping("/api/products")
 public class ProductController {
     private Logger logger = LoggerFactory.getLogger(ProductController.class);
     @Autowired
@@ -33,21 +33,23 @@ public class ProductController {
         try {
             ProductDetailsResponseDTO product = productService.findProductById(id);
             return ResponseEntity.ok(product);
+        } catch (ProductFingdingException e) {
+            return ResponseEntity.status(HttpStatus.NOT_FOUND).build();
         } catch (Exception e) {
-            throw new ProductFingdingException(e.getMessage());
+            return ResponseEntity.status(HttpStatus.INTERNAL_SERVER_ERROR).build();
         }
     }
     
     @GetMapping("/")
     public ResponseEntity<List<ProductDetailsResponseDTO>> getAllProduct(
-        @RequestParam(defaultValue = "0") int noPage,
-        @RequestParam(defaultValue = "30") int sizePage
+        @RequestParam(value = "noPage", defaultValue = "0") int noPage,
+        @RequestParam(value = "sizePage", defaultValue = "30") int sizePage
     ) {
         try {
             List<ProductDetailsResponseDTO> products = productService.findAllProduct(noPage, sizePage);
             return ResponseEntity.ok(products);
         } catch (Exception e) {
-            throw new ProductFingdingException(e.getMessage());
+            return ResponseEntity.status(HttpStatus.INTERNAL_SERVER_ERROR).build();
         }
     }
     
@@ -61,7 +63,7 @@ public class ProductController {
             List<ProductDetailsResponseDTO> products = productService.findProductByName(name, noPage, sizePage);
             return ResponseEntity.ok(products);
         } catch (Exception e) {
-            throw new ProductFingdingException(e.getMessage());
+            return ResponseEntity.status(HttpStatus.INTERNAL_SERVER_ERROR).build();
         }
     }
 

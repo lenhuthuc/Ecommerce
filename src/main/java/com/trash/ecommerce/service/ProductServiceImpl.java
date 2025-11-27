@@ -47,7 +47,7 @@ public class ProductServiceImpl implements ProductService {
     public ProductDetailsResponseDTO findProductById(Long id) {
         ProductDetailsResponseDTO productDTO = new ProductDetailsResponseDTO();
         Product product = productRepository.findById(id)
-                .orElseThrow(() -> new RuntimeException());
+                .orElseThrow(() -> new ProductFingdingException("Không tìm thấy sản phẩm"));
         productDTO.setPrice(product.getPrice());
         productDTO.setProduct_name(product.getProductName());
         productDTO.setQuantity(product.getQuantity());

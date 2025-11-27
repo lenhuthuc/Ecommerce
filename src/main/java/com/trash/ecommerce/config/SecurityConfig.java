@@ -29,7 +29,7 @@ public class SecurityConfig {
                 .csrf(customize -> customize.disable())
                 .authorizeHttpRequests(auth -> auth
                         .requestMatchers("/api/user/auth/login", "/api/user/auth/register", "/api/user/auth/logout").permitAll()
-                        .requestMatchers("/api/products/**", "/api/payments/vnpay/**").permitAll()
+                        .requestMatchers("/api/products/**").permitAll()
                         .requestMatchers("/api/admin/**").hasAuthority("ADMIN")
                         .requestMatchers("/api/user/**").hasAuthority("USER")
                         .anyRequest().authenticated()
