@@ -74,7 +74,6 @@ public class JwtService {
 
     public Long extractId(String token) {
         token = token.substring(7);
-        System.out.println(token);
         Claims claims = extractAllClaims(token);
         Long id = claims.get("id", Long.class);
         return id;
@@ -115,7 +114,12 @@ public class JwtService {
 
     public Token refreshToken(String oldRefreshToken) {
         Long userId = extractId(oldRefreshToken);
+        if (oldRefreshToken.startsWith("Bearer ")) {
+            oldRefreshToken = oldRefreshToken.substring(7);
+        }
         String storedToken = (String) redisTemplate.opsForValue().get("refresh:" + userId);
+        System.out.println("storedToken" + storedToken);
+        System.out.println("oldRefreshToken" + oldRefreshToken);
         if (storedToken == null || !storedToken.equals(oldRefreshToken) || isExpiration(storedToken)) {
             return null;
         }

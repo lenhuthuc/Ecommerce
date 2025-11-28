@@ -88,8 +88,9 @@ public class UserController {
 
     @PostMapping("auth/logout")
     public ResponseEntity<UserResponseDTO> logout(
-            @RequestHeader String token
+            @RequestHeader("Authorization") String token
     ) {
+        System.out.println("LOGOUT");
         Long userId = jwtService.extractId(token);
         try {
             com.trash.ecommerce.dto.UserResponseDTO userResponseDTO = userService.logout(userId);
@@ -143,14 +144,16 @@ public class UserController {
     }
 
     @GetMapping("/refresh")
-    public ResponseEntity<Token> refreshToken(@RequestHeader String refreshToken) {
+    public ResponseEntity<Token> refreshToken(@RequestHeader("Authorization") String refreshToken) {
         try {
             Token token = jwtService.refreshToken(refreshToken);
             if (token == null) {
                 return ResponseEntity.status(HttpStatus.UNAUTHORIZED).build();
             }
+
             return ResponseEntity.ok(token);
         } catch (ExpiredJwtException e) {
+            logger.error("ExpiredJwtException", e.getMessage());
             return ResponseEntity.status(HttpStatus.UNAUTHORIZED).body(null);
         }
 

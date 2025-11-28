@@ -2,6 +2,7 @@ package com.trash.ecommerce.entity;
 
 import java.math.BigDecimal;
 import java.time.LocalDateTime;
+import java.util.Date;
 import java.util.HashSet;
 import java.util.Set;
 
@@ -24,8 +25,8 @@ public class Order {
     private OrderStatus status;
     @Column(name = "total_price",nullable = false, precision = 12, scale = 2)
     private BigDecimal totalPrice;
-    @Column(name = "create_at")
-    private LocalDateTime createAt;
+    @Column(name = "created_at")
+    private Date createAt;
     @ManyToOne(fetch = FetchType.LAZY)
     @JoinColumn(name = "user_id")
     private Users user;

@@ -44,7 +44,7 @@ public class CartController {
     public ResponseEntity<CartItemTransactionalResponse> updateCartItem(
             @RequestHeader("Authorization") String token,
             @PathVariable Long productId,
-            @RequestParam Long quantity) {
+            @RequestParam(value = "quantity", defaultValue = "1", required = false) Long quantity) {
         try {
             Long userId = jwtService.extractId(token);
             CartItemTransactionalResponse response = cartItemService.updateQuantityCartItem(userId, quantity, productId);

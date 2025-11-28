@@ -40,15 +40,14 @@ public class CartItemServiceImpl implements CartItemService {
         Cart cart = users.getCart();
         Product product = productRepository.findById(productId)
                                         .orElseThrow(() -> new ProductFingdingException("product can't be found"));
-        CartItemId cartItemId = new CartItemId(userId, productId);
+        CartItemId cartItemId = new CartItemId(cart.getId(), productId);
         CartItem cartItem = cartItemRepository.findById(cartItemId)
                                             .orElseGet(
                                                 () -> {
                                                     CartItem anotherCartItem = new CartItem();
+                                                    anotherCartItem.setId(cartItemId);
                                                     anotherCartItem.setCart(cart);
                                                     anotherCartItem.setProduct(product);
-                                                    cart.getItems().add(anotherCartItem);
-                                                    product.getCartItems().add(anotherCartItem);
                                                     return anotherCartItem;
                                                 }
                                             );

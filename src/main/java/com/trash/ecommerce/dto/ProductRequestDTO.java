@@ -8,9 +8,7 @@ import lombok.NoArgsConstructor;
 @AllArgsConstructor
 @NoArgsConstructor
 @Data
-public class ProductRequireDTO {
-    @NotNull
-    private String img;
+public class ProductRequestDTO {
     @NotNull
     private String productName;
     @NotNull

@@ -1,15 +1,17 @@
 package com.trash.ecommerce.controller;
 
-import com.trash.ecommerce.dto.ProductRequireDTO;
+import com.trash.ecommerce.dto.ProductRequestDTO;
 import com.trash.ecommerce.dto.ProductResponseDTO;
 import com.trash.ecommerce.dto.UserProfileDTO;
 import com.trash.ecommerce.dto.UserResponseDTO;
-import com.trash.ecommerce.entity.Users;
 import com.trash.ecommerce.exception.FindingUserError;
 import com.trash.ecommerce.exception.ProductCreatingException;
 import com.trash.ecommerce.service.ProductService;
 import com.trash.ecommerce.service.UserService;
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
 import org.springframework.beans.factory.annotation.Autowired;
+import org.springframework.http.HttpStatus;
 import org.springframework.http.ResponseEntity;
 import org.springframework.security.access.prepost.PreAuthorize;
 import org.springframework.web.bind.annotation.*;
@@ -21,6 +23,7 @@ import java.util.List;
 @RequestMapping("api/admin")
 public class AdminController {
 
+    private Logger logger = LoggerFactory.getLogger(CartController.class);
     @Autowired
     private UserService userService;
 
@@ -42,36 +45,36 @@ public class AdminController {
     }
 
     @GetMapping("/users/{id}")
-    public ResponseEntity<Users> findUser(@PathVariable Long id) {
+    public ResponseEntity<UserProfileDTO> findUser(@PathVariable Long id) {
         try {
-            Users user = userService.findUsersById(id);
+            UserProfileDTO user = userService.findUsersById(id);
             return ResponseEntity.ok(user);
         } catch (Exception e) {
             throw new FindingUserError(e.getMessage());
         }
     }
 
-    @DeleteMapping("/users/{id}")  // ← SỬA THÀNH /users/{id}
+    @DeleteMapping("/users/{id}")
     public ResponseEntity<UserResponseDTO> deleteUser(
             @PathVariable Long id,
-            @RequestHeader String token
+            @RequestHeader("Authorization") String token
     ) {
         try {
             userService.deleteUser(id, token);
             return ResponseEntity.ok(new UserResponseDTO("Succesful"));
         } catch (Exception e) {
-            throw new FindingUserError(e.getMessage());
+            return ResponseEntity.status(HttpStatus.INTERNAL_SERVER_ERROR).build();
         }
     }
 
     // ========== PRODUCT MANAGEMENT ==========
     @PostMapping("/products")
     public ResponseEntity<ProductResponseDTO> addProduct(
-            @RequestBody ProductRequireDTO productRequireDTO,
-            @RequestParam("file") MultipartFile file
+            @RequestPart("products") ProductRequestDTO productRequestDTO,
+            @RequestPart("file") MultipartFile file
     ) {
         try {
-            ProductResponseDTO productResponseDTO = productService.createProduct(productRequireDTO, file);
+            ProductResponseDTO productResponseDTO = productService.createProduct(productRequestDTO, file);
             return ResponseEntity.ok(productResponseDTO);
         } catch (Exception e) {
             throw new ProductCreatingException(e.getMessage());
@@ -80,19 +83,20 @@ public class AdminController {
 
     @PutMapping("/products/{id}")
     public ResponseEntity<ProductResponseDTO> updateProduct(
-            @RequestBody ProductRequireDTO productRequireDTO,
+            @RequestPart("products") ProductRequestDTO productRequestDTO,
             @PathVariable Long id,
-            @RequestParam("file") MultipartFile file
+            @RequestPart("file") MultipartFile file
     ) {
         try {
-            ProductResponseDTO productResponseDTO = productService.updateProduct(productRequireDTO, id, file);
+            ProductResponseDTO productResponseDTO = productService.updateProduct(productRequestDTO, id, file);
             return ResponseEntity.ok(productResponseDTO);
         } catch (Exception e) {
-            throw new ProductCreatingException(e.getMessage());
+            logger.error("Update product has some problem", e);
+            return ResponseEntity.status(HttpStatus.INTERNAL_SERVER_ERROR).build();
         }
     }
 
-    @DeleteMapping("/products/{id}")  // ← SỬA THÀNH /products/{id}
+    @DeleteMapping("/products/{id}")
     public ResponseEntity<ProductResponseDTO> deleteProduct(@PathVariable Long id) {
         try {
             ProductResponseDTO productResponseDTO = productService.deleteProductById(id);

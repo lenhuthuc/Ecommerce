@@ -2,6 +2,7 @@ package com.trash.ecommerce.service;
 
 import java.math.BigDecimal;
 import java.time.LocalDateTime;
+import java.util.Date;
 import java.util.Set;
 import java.util.stream.Collectors;
 
@@ -46,7 +47,7 @@ public class OrderServiceImpl implements OrderService {
                 .orElseThrow(() -> new PaymentException("Method not found"));
         Cart cart = users.getCart();
         Order order = new Order();
-        order.setCreateAt(LocalDateTime.now());
+        order.setCreateAt(new Date());
         order.setStatus(OrderStatus.PENDING);
         order.setUser(users);
         BigDecimal totalPrice = BigDecimal.ZERO;

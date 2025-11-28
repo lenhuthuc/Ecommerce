@@ -11,6 +11,7 @@ import com.trash.ecommerce.dto.ProductDetailsResponseDTO;
 import com.trash.ecommerce.exception.ProductFingdingException;
 import com.trash.ecommerce.service.ProductService;
 
+import java.io.File;
 import java.io.IOException;
 import java.nio.file.Path;
 import java.nio.file.Paths;
@@ -68,19 +69,23 @@ public class ProductController {
     }
 
 
-    @GetMapping("/products/{id}/img")
+    @GetMapping("/{id}/img")
     public ResponseEntity<?> getProductImg(
             @PathVariable long id
     ) throws IOException {
         try {
-            Path path = Paths.get(productService.getImgProduct(id));
+            Path path = Paths.get("uploads/" + productService.getImgProduct(id));
             UrlResource resource = new UrlResource(path.toUri());
+            File file = path.toFile();
+            String fileName = file.getName();
             String contentType = "application/octet-stream";
-            if (path.endsWith(".png")) contentType = "image/png";
-            else if (path.endsWith(".jpg") || path.endsWith(".jpeg")) contentType = "image/jpeg";
-            else if (path.endsWith(".gif")) contentType = "image/gif";
+            if (fileName.endsWith(".png")) contentType = "image/png";
+            else if (fileName.endsWith(".jpg") || fileName.endsWith(".jpeg")) contentType = "image/jpeg";
+            else if (fileName.endsWith(".gif")) contentType = "image/gif";
 
             return ResponseEntity.ok().contentType(MediaType.valueOf(contentType)).body(resource);
+        } catch (ProductFingdingException e) {
+            return ResponseEntity.status(HttpStatus.NOT_FOUND).build();
         } catch (IOException e) {
             return ResponseEntity.status(HttpStatus.INTERNAL_SERVER_ERROR).build();
         }

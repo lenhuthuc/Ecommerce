@@ -98,16 +98,16 @@ public class UserServiceImpl implements UserService {
 
     @Override
     public UserResponseDTO logout(Long userId) {
-        Users users = userRepository.findById(userId)
-                .orElseThrow(() -> new FindingUserError("User not found"));
-        String key = "otp:" + users.getEmail();
+        String key = "refresh:" + String.valueOf(userId);
         redisTemplate.delete(key);
         return new UserResponseDTO("Success");
     }
 
     @Override
-    public Users findUsersById(Long id) {
-        return userRepository.findById(id).orElseThrow(() -> new RuntimeException("Không tìm thấy người dùng"));
+    public UserProfileDTO findUsersById(Long id) {
+        Users users = userRepository.findById(id).orElseThrow(() -> new RuntimeException("Không tìm thấy người dùng"));
+        UserProfileDTO userProfileDTO = userMapper.mapToUserProfileDTO(users);
+        return userProfileDTO;
     }
 
     @Override
@@ -175,7 +175,8 @@ public class UserServiceImpl implements UserService {
         if (!roles.contains("ADMIN") && !Objects.equals(jwtService.extractId(token), id)) {
             return;
         }
-        Users user = findUsersById(id);
+        Users user = userRepository.findById(id)
+                .orElseThrow(() -> new UsernameNotFoundException("Current user not found"));
         if (user == null) {
             throw new RuntimeException("User not found with id " + id);
         }

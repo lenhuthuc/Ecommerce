@@ -16,7 +16,7 @@ import org.springframework.data.domain.PageRequest;
 import org.springframework.stereotype.Service;
 
 import com.trash.ecommerce.dto.ProductDetailsResponseDTO;
-import com.trash.ecommerce.dto.ProductRequireDTO;
+import com.trash.ecommerce.dto.ProductRequestDTO;
 import com.trash.ecommerce.dto.ProductResponseDTO;
 import com.trash.ecommerce.entity.Cart;
 import com.trash.ecommerce.entity.CartItem;
@@ -78,27 +78,27 @@ public class ProductServiceImpl implements ProductService {
     }
 
     @Override
-    public ProductResponseDTO createProduct(ProductRequireDTO productRequireDTO, MultipartFile file) throws IOException {
+    public ProductResponseDTO createProduct(ProductRequestDTO productRequestDTO, MultipartFile file) throws IOException {
         Product product = new Product();
         String fileResource = UUID.randomUUID() + "_" + file.getOriginalFilename();
         product.setImgName(file.getOriginalFilename());
         Path path = Paths.get("uploads/" + fileResource);
         Files.copy(file.getInputStream(),path);
         product.setImgData(fileResource);
-        product.setPrice(productRequireDTO.getPrice());
-        product.setProductName(productRequireDTO.getProductName());
-        product.setQuantity(productRequireDTO.getQuantity());
+        product.setPrice(productRequestDTO.getPrice());
+        product.setProductName(productRequestDTO.getProductName());
+        product.setQuantity(productRequestDTO.getQuantity());
         productRepository.save(product);
         return new ProductResponseDTO("creating product is successful");
     }
 
     @Override
     @Transactional
-    public ProductResponseDTO updateProduct(ProductRequireDTO productRequireDTO, Long id, MultipartFile file) throws IOException {
+    public ProductResponseDTO updateProduct(ProductRequestDTO productRequestDTO, Long id, MultipartFile file) throws IOException {
         Product product = productRepository.findById(id).orElseThrow(
             () -> new ProductFingdingException("Product is not found")
         );
-        if (productRequireDTO.getImg() != null && !productRequireDTO.getImg().isEmpty()) {
+        if (!file.isEmpty()) {
             String oldImgPath = product.getImgData();
             if (oldImgPath != null) {
                 File oldFile = new File(oldImgPath);
@@ -115,14 +115,14 @@ public class ProductServiceImpl implements ProductService {
             product.setImgName(file.getOriginalFilename());
             product.setImgData(uploadPath.toString());
         }
-        if (productRequireDTO.getPrice() != null) {
-            product.setPrice(productRequireDTO.getPrice());
+        if (productRequestDTO.getPrice() != null) {
+            product.setPrice(productRequestDTO.getPrice());
         }
-        if (productRequireDTO.getProductName() != null && !productRequireDTO.getProductName().isEmpty()) {
-            product.setProductName(productRequireDTO.getProductName());
+        if (productRequestDTO.getProductName() != null && !productRequestDTO.getProductName().isEmpty()) {
+            product.setProductName(productRequestDTO.getProductName());
         }
-        if (productRequireDTO.getQuantity() != null) {
-            product.setQuantity(productRequireDTO.getQuantity());
+        if (productRequestDTO.getQuantity() != null) {
+            product.setQuantity(productRequestDTO.getQuantity());
         }
         productRepository.save(product);
         return new ProductResponseDTO("Update product is successful");
