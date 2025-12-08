@@ -8,7 +8,7 @@ import lombok.NoArgsConstructor;
 @NoArgsConstructor
 @Data
 public class ReviewResponse {
-    private Long userId;
+    private String userName;
     private Long productId;
     private Rating rate;
     private String comment;

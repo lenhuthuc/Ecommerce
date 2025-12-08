@@ -15,6 +15,7 @@ public class ProductMapper {
     private ReviewsMapper mapper;
     public ProductDetailsResponseDTO mapperProduct(Product product) {
         ProductDetailsResponseDTO productDTO = new ProductDetailsResponseDTO();
+        productDTO.setId(product.getId());
         productDTO.setProduct_name(product.getProductName());
         productDTO.setQuantity(product.getQuantity());
         productDTO.setPrice(product.getPrice());

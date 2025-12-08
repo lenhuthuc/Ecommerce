@@ -5,6 +5,7 @@ import java.util.List;
 import java.util.Map;
 
 import com.trash.ecommerce.dto.*;
+import com.trash.ecommerce.exception.UserAuthorizationException;
 import com.trash.ecommerce.service.JwtService;
 import io.jsonwebtoken.ExpiredJwtException;
 import org.slf4j.Logger;
@@ -13,6 +14,7 @@ import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.http.HttpStatus;
 import org.springframework.http.ResponseEntity;
 import org.springframework.security.access.prepost.PreAuthorize;
+import org.springframework.security.authentication.BadCredentialsException;
 import org.springframework.validation.BindingResult;
 import org.springframework.web.bind.annotation.DeleteMapping;
 import org.springframework.web.bind.annotation.GetMapping;
@@ -80,9 +82,14 @@ public class UserController {
         try {
             userLoginResponseDTO = userService.login(userLoginRequestDTO);
             return ResponseEntity.ok(userLoginResponseDTO);
-        } catch (Exception e) {
-            userLoginResponseDTO.setMessage(e.getMessage());
-            return ResponseEntity.badRequest().body(userLoginResponseDTO);
+        } catch (BadCredentialsException | UserAuthorizationException e) {
+            UserLoginResponseDTO responseDTO = new UserLoginResponseDTO();
+            responseDTO.setToken(new Token(null, null));
+            responseDTO.setMessage("Sai email/mật khẩu");
+            return ResponseEntity.status(HttpStatus.UNAUTHORIZED).body(responseDTO);
+        }
+        catch (Exception e) {
+            return ResponseEntity.status(HttpStatus.INTERNAL_SERVER_ERROR).build();
         }
     }
 

@@ -12,6 +12,7 @@ import com.trash.ecommerce.config.RedisConfig;
 import com.trash.ecommerce.dto.*;
 import com.trash.ecommerce.entity.Role;
 import com.trash.ecommerce.exception.FindingUserError;
+import com.trash.ecommerce.exception.UserAuthorizationException;
 import com.trash.ecommerce.mapper.UserMapper;
 import jakarta.servlet.http.HttpServletRequest;
 import org.springframework.data.domain.Page;
@@ -92,8 +93,8 @@ public class UserServiceImpl implements UserService {
             Users u = userRepository.findByEmail(user.getEmail()).orElseThrow(() -> new RuntimeException("user is not found"));
             Token token = jwtService.generateToken(user.getEmail(), u.getId());
             return new UserLoginResponseDTO(token, "Bearer", jwtService.extractExpiration(token.getRefresh()), "Succesful");
-        } else
-            throw new RuntimeException("Sai email/mật khẩu");
+        }
+        return new UserLoginResponseDTO(new Token(null,null), null, null, "Sai email/mật khẩu");
     }
 
     @Override

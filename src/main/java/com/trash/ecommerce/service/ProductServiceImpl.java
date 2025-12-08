@@ -48,9 +48,7 @@ public class ProductServiceImpl implements ProductService {
         ProductDetailsResponseDTO productDTO = new ProductDetailsResponseDTO();
         Product product = productRepository.findById(id)
                 .orElseThrow(() -> new ProductFingdingException("Không tìm thấy sản phẩm"));
-        productDTO.setPrice(product.getPrice());
-        productDTO.setProduct_name(product.getProductName());
-        productDTO.setQuantity(product.getQuantity());
+        productDTO = productMapper.mapperProduct(product);
         return productDTO;
     }
 
