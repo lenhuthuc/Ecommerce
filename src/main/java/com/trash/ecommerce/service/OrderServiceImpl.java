@@ -48,6 +48,7 @@ public class OrderServiceImpl implements OrderService {
         Cart cart = users.getCart();
         Order order = new Order();
         order.setCreateAt(new Date());
+        order.setPaymentMethod(paymentMethod);
         order.setStatus(OrderStatus.PENDING);
         order.setUser(users);
         BigDecimal totalPrice = BigDecimal.ZERO;
@@ -55,6 +56,7 @@ public class OrderServiceImpl implements OrderService {
             totalPrice = totalPrice.add(item.getProduct().getPrice().multiply(BigDecimal.valueOf(item.getQuantity())));
         }
         order.setTotalPrice(totalPrice);
+        orderRepository.save(order);
         Set<OrderItem> orderItems = cart.getItems().stream().map(
             item -> {
                 OrderItem orderItem = new OrderItem();

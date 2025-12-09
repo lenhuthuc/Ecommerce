@@ -10,6 +10,7 @@ import lombok.NoArgsConstructor;
 @NoArgsConstructor
 @Data
 public class CartItemDetailsResponseDTO {
+    private Long productId;
     private String productName;
     private BigDecimal price;
     private Long quantity;

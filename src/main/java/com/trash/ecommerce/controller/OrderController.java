@@ -25,7 +25,7 @@ public class OrderController {
     @Autowired
     private UserService userService;
 
-    @PostMapping
+    @GetMapping
     public ResponseEntity<OrderResponseDTO> createOrder(
             @RequestHeader("Authorization") String token,
             @RequestParam Long paymentMethodId) {
