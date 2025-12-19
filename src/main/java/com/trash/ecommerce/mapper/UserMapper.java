@@ -11,8 +11,8 @@ import java.util.stream.Collectors;
 public class UserMapper {
     public UserProfileDTO mapToUserProfileDTO(Users users) {
         return new UserProfileDTO(
+                users.getId(),
                 users.getEmail(),
-                users.getPassword(),
                 users.getAddress(),
                 users.getRoles().stream()
                         .map(Role::getRoleName)

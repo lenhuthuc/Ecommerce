@@ -74,7 +74,7 @@ public class ProductController {
             @PathVariable long id
     ) throws IOException {
         try {
-            Path path = Paths.get(productService.getImgProduct(id));
+            Path path = Paths.get("uploads/" + productService.getImgProduct(id));
             UrlResource resource = new UrlResource(path.toUri());
             File file = path.toFile();
             String fileName = file.getName();

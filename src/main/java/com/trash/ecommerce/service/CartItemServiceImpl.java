@@ -69,7 +69,6 @@ public class CartItemServiceImpl implements CartItemService {
         if (!cartItemId.getCartId().equals(cartId)) {
             throw new AccessDeniedException("You can't delete this item !");
         }
-        cart.getItems().removeIf(item -> item.getId().equals(cartItemId));
         cartItemRepository.delete(cartItem);
         return new CartItemTransactionalResponse("delete item successful");
     }

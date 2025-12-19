@@ -17,4 +17,6 @@ public class OrderResponseDTO {
     private Set<CartItemDetailsResponseDTO> cartItems = new HashSet<>();
     private BigDecimal totalPrice;
     private OrderStatus status;
+    private String address;
+    private String paymentUrl;
 }

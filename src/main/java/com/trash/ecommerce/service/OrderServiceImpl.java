@@ -1,14 +1,17 @@
 package com.trash.ecommerce.service;
 
 import java.math.BigDecimal;
-import java.time.LocalDateTime;
 import java.util.Date;
+import java.util.HashSet;
+import java.util.List;
 import java.util.Set;
 import java.util.stream.Collectors;
 
+import com.trash.ecommerce.dto.OrderSummaryDTO;
 import com.trash.ecommerce.entity.*;
 import com.trash.ecommerce.exception.*;
-import com.trash.ecommerce.repository.PaymentMethodRepository;
+import com.trash.ecommerce.mapper.OrderMapper;
+import com.trash.ecommerce.repository.*;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
@@ -16,73 +19,135 @@ import org.springframework.transaction.annotation.Transactional;
 import com.trash.ecommerce.dto.CartItemDetailsResponseDTO;
 import com.trash.ecommerce.dto.OrderMessageResponseDTO;
 import com.trash.ecommerce.dto.OrderResponseDTO;
-import com.trash.ecommerce.repository.OrderItemRepository;
-import com.trash.ecommerce.repository.OrderRepository;
-import com.trash.ecommerce.repository.UserRepository;
 
 @Service
 public class OrderServiceImpl implements OrderService {
 
     @Autowired
-    private final UserRepository userRepository;
+    private UserRepository userRepository;
     @Autowired
-    private final OrderRepository orderRepository;
+    private OrderRepository orderRepository;
     @Autowired
-    private final OrderItemRepository orderItemRepository;
+    private OrderItemRepository orderItemRepository;
     @Autowired
-    private final PaymentMethodRepository paymentMethodRepository;
-
-    public OrderServiceImpl(UserRepository userRepository, OrderRepository orderRepository, OrderItemRepository orderItemRepository, PaymentService paymentService, CartItemService cartItemService, EmailService emailService, InvoiceService invoiceService, PaymentMethodRepository paymentMethodRepository) {
+    private PaymentMethodRepository paymentMethodRepository;
+    @Autowired
+    private PaymentService paymentService;
+    @Autowired
+    private CartRepository cartRepository;
+    @Autowired
+    private OrderMapper orderMapper;
+    public OrderServiceImpl(UserRepository userRepository, OrderRepository orderRepository, OrderItemRepository orderItemRepository, PaymentService paymentService, CartItemService cartItemService, EmailService emailService, InvoiceService invoiceService, PaymentMethodRepository paymentMethodRepository, CartRepository cartRepository) {
         this.userRepository = userRepository;
         this.orderRepository = orderRepository;
         this.orderItemRepository = orderItemRepository;
         this.paymentMethodRepository = paymentMethodRepository;
+        this.cartRepository = cartRepository;
     }
 
     @Override
-    public OrderResponseDTO createMyOrder(Long userId, Long paymentMethodId) {
-        Users users = userRepository.findById(userId)
-                                        .orElseThrow(() -> new FindingUserError("user is not found"));
+    public List<OrderSummaryDTO> getAllMyOrders(Long userId, String ipAddress) {
+        List<Order> orders = orderRepository.findByUserIdOrderByCreateAtDesc(userId);
+
+        return orders.stream().map(order -> {
+            String url = null;
+            if (order.getStatus() == OrderStatus.PENDING_PAYMENT && order.getPaymentMethod().getId() == 2) {
+                url = paymentService.createPaymentUrl(order.getTotalPrice(), ".", order.getId(), ipAddress);
+            }
+
+            return orderMapper.toOrderSummaryDTO(order, url);
+        }).collect(Collectors.toList());
+    }
+
+    @Override
+    public OrderResponseDTO getOrderById(Long userId, Long orderId, String IpAddress) {
+        Order order = orderRepository.findById(orderId)
+                .orElseThrow(() -> new ResourceNotFoundException("Order not found"));
+
+        if (!order.getUser().getId().equals(userId)) {
+            throw new AccessDeniedException("You do not have permission to view this order");
+        }
+
+        return orderMapper.toOrderResponseDTO(
+                order,
+                (order.getPaymentMethod().getId() == 1) ? null : paymentService.createPaymentUrl(order.getTotalPrice(), ".", order.getId(), IpAddress)
+        );
+    }
+
+    @Override
+    @Transactional
+    public OrderResponseDTO createMyOrder(Long userId, Long paymentMethodId, String IpAddress) {
+
+
+        Users user = userRepository.findById(userId)
+                .orElseThrow(() -> new FindingUserError("User not found"));
+
+        Cart cart = user.getCart();
+        if (cart == null || cart.getItems().isEmpty()) {
+            throw new OrderValidException("Cart is empty");
+        }
+
         PaymentMethod paymentMethod = paymentMethodRepository.findById(paymentMethodId)
-                .orElseThrow(() -> new PaymentException("Method not found"));
-        Cart cart = users.getCart();
+                .orElseThrow(() -> new PaymentException("Payment method not found"));
+
+        String address = user.getAddress();
+        // 2. Khởi tạo Order
         Order order = new Order();
         order.setCreateAt(new Date());
+        order.setUser(user);
         order.setPaymentMethod(paymentMethod);
-        order.setStatus(OrderStatus.PENDING);
-        order.setUser(users);
-        BigDecimal totalPrice = BigDecimal.ZERO;
-        for(CartItem item : cart.getItems()) {
-            totalPrice = totalPrice.add(item.getProduct().getPrice().multiply(BigDecimal.valueOf(item.getQuantity())));
+        order.setAddress(address);
+        if (paymentMethod.getId() == 2L) {
+            order.setStatus(OrderStatus.PENDING_PAYMENT);
+        } else {
+            order.setStatus(OrderStatus.PLACED);
         }
+
+        BigDecimal totalPrice = BigDecimal.ZERO;
+        Set<OrderItem> orderItems = new HashSet<>();
+        Set<CartItemDetailsResponseDTO> responseItems = new HashSet<>();
+
+        for (CartItem cartItem : cart.getItems()) {
+            Product product = cartItem.getProduct();
+            Long quantityBuy = cartItem.getQuantity();
+
+            if (product.getQuantity() < quantityBuy) {
+                throw new ProductQuantityValidation("Product " + product.getProductName() + " is out of stock!");
+            }
+            product.setQuantity(product.getQuantity() - quantityBuy);
+
+            BigDecimal currentPrice = product.getPrice();
+            BigDecimal lineAmount = currentPrice.multiply(BigDecimal.valueOf(quantityBuy));
+            totalPrice = totalPrice.add(lineAmount);
+
+            OrderItem orderItem = new OrderItem();
+            orderItem.setOrder(order);
+            orderItem.setProduct(product);
+            orderItem.setQuantity(quantityBuy);
+            orderItem.setPrice(currentPrice);
+            orderItems.add(orderItem);
+
+
+            CartItemDetailsResponseDTO dto = new CartItemDetailsResponseDTO();
+            dto.setProductName(product.getProductName());
+            dto.setPrice(currentPrice);
+            dto.setQuantity(quantityBuy);
+            responseItems.add(dto);
+        }
+
         order.setTotalPrice(totalPrice);
-        orderRepository.save(order);
-        Set<OrderItem> orderItems = cart.getItems().stream().map(
-            item -> {
-                OrderItem orderItem = new OrderItem();
-                orderItem.setOrder(order);
-                orderItem.setPrice(item.getProduct().getPrice());
-                orderItem.setProduct(item.getProduct());
-                orderItem.setQuantity(item.getQuantity());
-                orderItemRepository.save(orderItem);
-                return orderItem;
-            }
-        ).collect(Collectors.toSet());
-        Set<CartItemDetailsResponseDTO> cartItemDetailsResponseDTOs = cart.getItems().stream().map(
-            item -> {
-                CartItemDetailsResponseDTO dto = new CartItemDetailsResponseDTO();
-                dto.setProductName(item.getProduct().getProductName());
-                dto.setPrice(item.getProduct().getPrice());
-                dto.setQuantity(item.getQuantity());
-                return dto;
-            }
-        ).collect(Collectors.toSet());
         order.setOrderItems(orderItems);
+
         orderRepository.save(order);
+
+        cartRepository.deleteCartItems(cart.getId());
+        cart.getItems().clear();
         return new OrderResponseDTO(
-            cartItemDetailsResponseDTOs,
-            totalPrice,
-            OrderStatus.PENDING
+                responseItems,
+                totalPrice,
+                order.getStatus(),
+                address,
+                (paymentMethodId == 1) ? null : paymentService.createPaymentUrl(totalPrice, ".", order.getId(), IpAddress)
         );
     }
 

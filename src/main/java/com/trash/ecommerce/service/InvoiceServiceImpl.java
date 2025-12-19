@@ -57,6 +57,7 @@ public class InvoiceServiceImpl implements InvoiceService {
         invoice.setCreatedAt(new Date());
         invoice.setUser(users);
         invoice.setPaymentMethod(paymentMethod);
+        invoice.setInvoiceItems(invoiceItems);
         invoiceRepository.save(invoice);
         return invoiceMapper.MapToDTO(invoice);
     }

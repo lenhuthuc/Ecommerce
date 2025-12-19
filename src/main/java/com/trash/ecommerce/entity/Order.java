@@ -47,4 +47,7 @@ public class Order {
     @ManyToOne(fetch = FetchType.LAZY)
     @JoinColumn(name = "payment_id")
     private PaymentMethod paymentMethod;
+
+    @Column(name = "address")
+    private String address;
 }

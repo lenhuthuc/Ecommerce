@@ -3,6 +3,7 @@ package com.trash.ecommerce.repository;
 import org.springframework.data.domain.Page;
 import org.springframework.data.domain.PageRequest;
 import org.springframework.data.jpa.repository.JpaRepository;
+import org.springframework.data.jpa.repository.Modifying;
 import org.springframework.data.jpa.repository.Query;
 import org.springframework.data.repository.query.Param;
 import org.springframework.stereotype.Repository;
@@ -16,4 +17,10 @@ public interface ProductRepository extends JpaRepository <Product, Long> {
         nativeQuery = true
     )
     Page<Product> findProductsByName(@Param("name") String name, PageRequest pageRequest);
+
+    @Modifying
+    @Query(value = "UPDATE product p SET p.quantity = p.quantity - :amount " +
+            "WHERE p.id = :id AND p.quantity >= :amount",
+            nativeQuery = true)
+    int decreaseStock(@Param("id") Long id, @Param("amount") Long amount);
 }

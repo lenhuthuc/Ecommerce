@@ -37,6 +37,8 @@ public class ReviewServiceImpl implements ReviewService {
                         .orElseThrow(() -> new ProductFingdingException("Product not found"));
         users.getReviews().add(review);
         product.getReviews().add(review);
+        review.setUser(users);
+        review.setProduct(product);
         reviewRepository.save(review);
         return reviewsMapper.mapReview(review);
     }

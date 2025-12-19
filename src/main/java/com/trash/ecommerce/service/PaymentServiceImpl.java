@@ -15,10 +15,7 @@ import com.trash.ecommerce.entity.*;
 import com.trash.ecommerce.exception.OrderExistsException;
 import com.trash.ecommerce.exception.PaymentException;
 import com.trash.ecommerce.exception.ProductQuantityValidation;
-import com.trash.ecommerce.repository.CartRepository;
-import com.trash.ecommerce.repository.OrderRepository;
-import com.trash.ecommerce.repository.PaymentMethodRepository;
-import com.trash.ecommerce.repository.UserRepository;
+import com.trash.ecommerce.repository.*;
 import jakarta.servlet.http.HttpServletRequest;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.stereotype.Service;
@@ -28,6 +25,8 @@ public class PaymentServiceImpl implements PaymentService {
 
     @Autowired
     private UserRepository userRepository;
+    @Autowired
+    private ProductRepository productRepository;
     @Autowired
     private PaymentMethodRepository paymentMethodRepository;
     @Autowired
@@ -188,10 +187,9 @@ public class PaymentServiceImpl implements PaymentService {
                             Cart cart = user.getCart();
                             for(CartItem cartItem : cart.getItems()) {
                                 Product product = cartItem.getProduct();
-                                if (product.getQuantity() - cartItem.getQuantity() >= 0) {
-                                    product.setQuantity(product.getQuantity() - cartItem.getQuantity());
-                                } else {
-                                    throw new ProductQuantityValidation("Quantity is invalidation !");
+                                int updatedRows = productRepository.decreaseStock(product.getId(), cartItem.getQuantity());
+                                if (updatedRows == 0) {
+                                    throw new ProductQuantityValidation("Hết hàng hoặc số lượng không đủ!");
                                 }
                                 cartItemService.removeItemOutOfCart(user.getId(), cartItem.getProduct().getId());
                             }
@@ -219,7 +217,7 @@ public class PaymentServiceImpl implements PaymentService {
                     }
                     else
                     {
-                        return new PaymentMethodResponse("02","rder already confirmed");
+                        return new PaymentMethodResponse("02","Order already confirmed");
                     }
                 }
                 else

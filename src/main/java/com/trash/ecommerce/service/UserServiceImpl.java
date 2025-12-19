@@ -116,8 +116,8 @@ public class UserServiceImpl implements UserService {
         Users user = userRepository.findById(id)
                         .orElseThrow(() -> new RuntimeException("User is not found"));
         UserProfileDTO userProfileDTO = new UserProfileDTO();
+        userProfileDTO.setId(user.getId());
         userProfileDTO.setEmail(user.getEmail());
-        userProfileDTO.setPassword(user.getPassword());
         userProfileDTO.setAddress(user.getAddress());
         Set<String> roles = new HashSet<>();
         for (Role role : user.getRoles()) {
@@ -149,18 +149,10 @@ public class UserServiceImpl implements UserService {
             targetUser.setEmail(user.getEmail());
         }
 
-        if (user.getPassword() != null && !user.getPassword().isEmpty()) {
-            String password = en.encode(user.getPassword());
-            targetUser.setPassword(password);
-        }
-
         if (user.getAddress() != null && !user.getAddress().isEmpty()) {
             targetUser.setAddress(user.getAddress());
         }
 
-        if (user.getPaymentMethod() != null && !user.getPaymentMethod().isEmpty()) {
-            targetUser.setPaymentMethods(user.getPaymentMethod());
-        }
 
         userRepository.save(targetUser);
         return new UserResponseDTO("Update thành công");
@@ -196,7 +188,7 @@ public class UserServiceImpl implements UserService {
     @Override
     public UserResponseDTO resetPassword(String email) {
         int number = (int)(Math.random() * 900000) + 100000;
-        redisTemplate.opsForValue().set("opt:" + email, String.valueOf(number), 5, TimeUnit.MINUTES);
+        redisTemplate.opsForValue().set("otp:" + email, String.valueOf(number), 5, TimeUnit.MINUTES);
         emailService.sendEmail(email, "Reset Password", "Your otp code is : " + number);
         return new UserResponseDTO("OTP has been send");
     }
@@ -217,6 +209,7 @@ public class UserServiceImpl implements UserService {
                 .orElseThrow(() -> new RuntimeException("User is not found"));
         newPassword = en.encode(newPassword);
         user.setPassword(newPassword);
+        userRepository.save(user);
         return new UserResponseDTO("Change password successfully");
     }
 
