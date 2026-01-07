@@ -1,6 +1,7 @@
 package com.trash.ecommerce.service;
 
 import java.nio.file.attribute.UserPrincipalNotFoundException;
+import java.util.Date;
 import java.util.HashSet;
 import java.util.List;
 import java.util.Objects;
@@ -20,6 +21,7 @@ import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.data.domain.PageRequest;
 import org.springframework.data.redis.core.RedisTemplate;
 import org.springframework.security.authentication.AuthenticationManager;
+import org.springframework.security.authentication.BadCredentialsException;
 import org.springframework.security.authentication.UsernamePasswordAuthenticationToken;
 import org.springframework.security.core.Authentication;
 import org.springframework.security.core.GrantedAuthority;
@@ -75,7 +77,11 @@ public class UserServiceImpl implements UserService {
         String password = en.encode(user.getPassword());
         tmpUser.setPassword(password);
         Set<Role> roles = new HashSet<>();
-        roles.add(roleService.findRoleByName("USER"));
+        Role userRole = roleService.findRoleByName("USER");
+        if (userRole == null) {
+            throw new RuntimeException("USER role not found in system");
+        }
+        roles.add(userRole);
         tmpUser.setRoles(roles);
         Cart cart = new Cart();
         cart.setUser(tmpUser);
@@ -87,12 +93,26 @@ public class UserServiceImpl implements UserService {
 
     @Override
     public UserLoginResponseDTO login(UserLoginRequestDTO user) {
-        Authentication authentication = auth
-                .authenticate(new UsernamePasswordAuthenticationToken(user.getEmail(), user.getPassword()));
-        if (authentication.isAuthenticated()) {
-            Users u = userRepository.findByEmail(user.getEmail()).orElseThrow(() -> new RuntimeException("user is not found"));
-            Token token = jwtService.generateToken(user.getEmail(), u.getId());
-            return new UserLoginResponseDTO(token, "Bearer", jwtService.extractExpiration(token.getRefresh()), "Succesful");
+        try {
+            Authentication authentication = auth
+                    .authenticate(new UsernamePasswordAuthenticationToken(user.getEmail(), user.getPassword()));
+            if (authentication != null && authentication.isAuthenticated()) {
+                Users u = userRepository.findByEmail(user.getEmail())
+                        .orElseThrow(() -> new RuntimeException("user is not found"));
+                Token token = jwtService.generateToken(user.getEmail(), u.getId());
+                Date expiration = null;
+                if (token.getRefresh() != null) {
+                    Date extractedExpiration = jwtService.extractExpiration(token.getRefresh());
+                    if (extractedExpiration != null) {
+                        expiration = new java.sql.Date(extractedExpiration.getTime());
+                    }
+                }
+                return new UserLoginResponseDTO(token, "Bearer", expiration, "Succesful");
+            }
+        } catch (org.springframework.security.authentication.BadCredentialsException e) {
+            throw new BadCredentialsException("Sai email/mật khẩu");
+        } catch (Exception e) {
+            throw new RuntimeException("Login failed: " + e.getMessage(), e);
         }
         return new UserLoginResponseDTO(new Token(null,null), null, null, "Sai email/mật khẩu");
     }
@@ -170,9 +190,6 @@ public class UserServiceImpl implements UserService {
         }
         Users user = userRepository.findById(id)
                 .orElseThrow(() -> new UsernameNotFoundException("Current user not found"));
-        if (user == null) {
-            throw new RuntimeException("User not found with id " + id);
-        }
         // Ngắt quan hệ ManyToMany
         user.getRoles().clear();
         user.getPaymentMethods().clear();
@@ -187,6 +204,9 @@ public class UserServiceImpl implements UserService {
 
     @Override
     public UserResponseDTO resetPassword(String email) {
+        if (email == null || email.isEmpty()) {
+            throw new IllegalArgumentException("Email is required");
+        }
         int number = (int)(Math.random() * 900000) + 100000;
         redisTemplate.opsForValue().set("otp:" + email, String.valueOf(number), 5, TimeUnit.MINUTES);
         emailService.sendEmail(email, "Reset Password", "Your otp code is : " + number);
@@ -205,6 +225,12 @@ public class UserServiceImpl implements UserService {
 
     @Override
     public UserResponseDTO changePassword(String email, String newPassword) {
+        if (email == null || email.isEmpty()) {
+            throw new IllegalArgumentException("Email is required");
+        }
+        if (newPassword == null || newPassword.isEmpty()) {
+            throw new IllegalArgumentException("New password is required");
+        }
         Users user = userRepository.findByEmail(email)
                 .orElseThrow(() -> new RuntimeException("User is not found"));
         newPassword = en.encode(newPassword);
@@ -215,10 +241,14 @@ public class UserServiceImpl implements UserService {
 
     @Override
     public String getClientIpAddress(HttpServletRequest request) {
+        if (request == null) {
+            return "unknown";
+        }
         String xForwardedFor = request.getHeader("X-Forwarded-For");
         if (xForwardedFor != null && !xForwardedFor.isEmpty()) {
-            return xForwardedFor.split(",")[0];
+            return xForwardedFor.split(",")[0].trim();
         }
-        return request.getRemoteAddr();
+        String remoteAddr = request.getRemoteAddr();
+        return remoteAddr != null ? remoteAddr : "unknown";
     }
 }

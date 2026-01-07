@@ -22,6 +22,7 @@ public class Order {
     @Column(name = "id")
     private Long id;
     @Column(name = "status") 
+    @Enumerated(EnumType.STRING)
     private OrderStatus status;
     @Column(name = "total_price",nullable = false, precision = 12, scale = 2)
     private BigDecimal totalPrice;

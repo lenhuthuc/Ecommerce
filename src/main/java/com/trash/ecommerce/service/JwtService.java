@@ -63,7 +63,10 @@ public class JwtService {
                         .signWith(getKey())
                         .compact()
         );
-        redisTemplate.opsForValue().set("refresh:" + String.valueOf(id), token.getRefresh(), 3 * 60 * 60, TimeUnit.SECONDS);
+        String refreshTokenValue = token.getRefresh();
+        if (refreshTokenValue != null) {
+            redisTemplate.opsForValue().set("refresh:" + String.valueOf(id), refreshTokenValue, 3 * 60 * 60, TimeUnit.SECONDS);
+        }
         return token;
     }
 
@@ -72,65 +75,128 @@ public class JwtService {
         return Keys.hmacShaKeyFor(keyBytes);
     }
 
+    private String removeBearerPrefix(String token) {
+        if (token != null && token.startsWith("Bearer ")) {
+            return token.substring(7);
+        }
+        return token;
+    }
+
     public Long extractId(String token) {
-        token = token.substring(7);
+        if (token == null || token.trim().isEmpty()) {
+            throw new IllegalArgumentException("Token cannot be null or empty");
+        }
+        token = removeBearerPrefix(token);
+        if (token == null || token.trim().isEmpty()) {
+            throw new IllegalArgumentException("Invalid token format");
+        }
         Claims claims = extractAllClaims(token);
         Long id = claims.get("id", Long.class);
+        if (id == null) {
+            throw new IllegalArgumentException("Token does not contain user ID");
+        }
         return id;
     }
+    
     public String extractUsername(String token) {
+        if (token == null || token.trim().isEmpty()) {
+            throw new IllegalArgumentException("Token cannot be null or empty");
+        }
+        token = removeBearerPrefix(token);
         return extractClaim(token, Claims::getSubject);
     }
 
-    public Date extractExspiration(String token) {
-        return extractClaim(token, Claims::getExpiration);
-    }
-
     public <T> T extractClaim(String token, Function <Claims, T> claimResolve) {
+        if (token == null || token.trim().isEmpty()) {
+            throw new IllegalArgumentException("Token cannot be null or empty");
+        }
+        token = removeBearerPrefix(token);
         Claims claims = extractAllClaims(token);
         return claimResolve.apply(claims);
     }
 
     public Claims extractAllClaims(String token) {
-        return Jwts.parser()
-                    .verifyWith(getKey())
-                    .build()
-                    .parseSignedClaims(token)
-                    .getPayload();
+        if (token == null || token.trim().isEmpty()) {
+            throw new IllegalArgumentException("Token cannot be null or empty");
+        }
+        try {
+            return Jwts.parser()
+                        .verifyWith(getKey())
+                        .build()
+                        .parseSignedClaims(token)
+                        .getPayload();
+        } catch (Exception e) {
+            throw new IllegalArgumentException("Invalid token: " + e.getMessage(), e);
+        }
     }
 
     public boolean validationTokenCheck(String token, UserDetails userDetails) {
-        String username = extractUsername(token);
-        return username.equals(userDetails.getUsername()) && !isExpiration(token);
+        if (token == null || userDetails == null) {
+            return false;
+        }
+        try {
+            String username = extractUsername(token);
+            return username != null && username.equals(userDetails.getUsername()) && !isExpiration(token);
+        } catch (Exception e) {
+            return false;
+        }
     }
 
     public boolean isExpiration(String token) {
-        return extractExpiration(token).before(new Date());
+        try {
+            Date expiration = extractExpiration(token);
+            return expiration != null && expiration.before(new Date());
+        } catch (Exception e) {
+            return true; // Nếu không parse được, coi như đã hết hạn
+        }
     }
 
     public Date extractExpiration(String token) {
+        if (token == null || token.trim().isEmpty()) {
+            throw new IllegalArgumentException("Token cannot be null or empty");
+        }
+        token = removeBearerPrefix(token);
         return extractClaim(token, Claims::getExpiration);
     }
 
     public Token refreshToken(String oldRefreshToken) {
-        Long userId = extractId(oldRefreshToken);
-        if (oldRefreshToken.startsWith("Bearer ")) {
-            oldRefreshToken = oldRefreshToken.substring(7);
-        }
-        String storedToken = (String) redisTemplate.opsForValue().get("refresh:" + userId);
-        System.out.println("storedToken" + storedToken);
-        System.out.println("oldRefreshToken" + oldRefreshToken);
-        if (storedToken == null || !storedToken.equals(oldRefreshToken) || isExpiration(storedToken)) {
+        if (oldRefreshToken == null || oldRefreshToken.trim().isEmpty()) {
             return null;
         }
-        redisTemplate.delete("refresh:" + userId);
-        Token token = generateToken(extractUsername(storedToken), userId);
-        redisTemplate.opsForValue().set(
-                "refresh:" + userId,
-                token.getRefresh(),
-                3, TimeUnit.HOURS
-        );
-        return token;
+        
+        // Xử lý "Bearer " prefix trước khi extract
+        String cleanToken = removeBearerPrefix(oldRefreshToken);
+        if (cleanToken == null || cleanToken.trim().isEmpty()) {
+            return null;
+        }
+        
+        try {
+            Long userId = extractId(oldRefreshToken); // extractId sẽ tự xử lý prefix
+            String storedToken = (String) redisTemplate.opsForValue().get("refresh:" + userId);
+            
+            if (storedToken == null || !storedToken.equals(cleanToken)) {
+                return null;
+            }
+            
+            if (isExpiration(storedToken)) {
+                return null;
+            }
+            
+            redisTemplate.delete("refresh:" + userId);
+            String username = extractUsername(storedToken);
+            Token token = generateToken(username, userId);
+            String newRefreshToken = token.getRefresh();
+            if (newRefreshToken != null) {
+                redisTemplate.opsForValue().set(
+                        "refresh:" + userId,
+                        newRefreshToken,
+                        3, TimeUnit.HOURS
+                );
+            }
+            return token;
+        } catch (Exception e) {
+            return null;
+        }
     }
 
 }

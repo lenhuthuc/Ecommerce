@@ -48,7 +48,17 @@ public class InvoiceServiceImpl implements InvoiceService {
                 .orElseThrow(() -> new PaymentException("Payment method not found"));
         Set<InvoiceItem> invoiceItems = new HashSet<>();
         BigDecimal totalPrice = BigDecimal.valueOf(0.0);
+        if (order.getOrderItems() == null || order.getOrderItems().isEmpty()) {
+            throw new OrderExistsException("Order has no items");
+        }
         for(OrderItem item : order.getOrderItems()) {
+            if (item == null) continue;
+            if (item.getId() == null) {
+                throw new OrderExistsException("Order item ID is null");
+            }
+            if (item.getPrice() == null || item.getQuantity() == null) {
+                throw new OrderExistsException("Order item price or quantity is null");
+            }
             invoiceItems.add(invoiceItemService.makeInvoiceItem(item.getId(), invoice.getId()));
             totalPrice = totalPrice.add(item.getPrice().multiply(BigDecimal.valueOf(item.getQuantity())));
         }

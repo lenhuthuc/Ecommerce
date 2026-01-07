@@ -34,10 +34,19 @@ public class CartItemServiceImpl implements CartItemService {
     @Override
     @Transactional
     public CartItemTransactionalResponse updateQuantityCartItem(Long userId, Long quantity, Long productId) {
+        if (quantity == null || quantity <= 0) {
+            throw new IllegalArgumentException("Quantity must be greater than 0");
+        }
 
         Users users = userRepository.findById(userId)
                                         .orElseThrow(() -> new FindingUserError("user is not found"));
         Cart cart = users.getCart();
+        if (cart == null) {
+            throw new FindingUserError("Cart not found for user");
+        }
+        if (cart.getId() == null) {
+            throw new FindingUserError("Cart ID is null");
+        }
         Product product = productRepository.findById(productId)
                                         .orElseThrow(() -> new ProductFingdingException("product can't be found"));
         CartItemId cartItemId = new CartItemId(cart.getId(), productId);
@@ -62,11 +71,17 @@ public class CartItemServiceImpl implements CartItemService {
         Users users = userRepository.findById(userId)
                                         .orElseThrow(() -> new FindingUserError("user is not found"));
         Cart cart = users.getCart();
+        if (cart == null) {
+            throw new FindingUserError("Cart not found for user");
+        }
         Long cartId = cart.getId();
+        if (cartId == null) {
+            throw new FindingUserError("Cart ID is null");
+        }
         CartItem cartItem = cartItemRepository.findById(new CartItemId(cartId, productId))
                 .orElseThrow(() -> new CartItemException("Item not found"));
         CartItemId cartItemId = cartItem.getId();
-        if (!cartItemId.getCartId().equals(cartId)) {
+        if (cartItemId == null || !cartItemId.getCartId().equals(cartId)) {
             throw new AccessDeniedException("You can't delete this item !");
         }
         cartItemRepository.delete(cartItem);

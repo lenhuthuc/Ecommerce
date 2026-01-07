@@ -67,7 +67,8 @@ public class PaymentServiceImpl implements PaymentService {
             String vnp_IpAddr = ipAddress;
             String vnp_TmnCode = vnPayConfig.getTmnCode();
     
-            int amount = Integer.parseInt(total_price.toPlainString())*100;
+            // Chuyển BigDecimal sang VND (nhân 100 và làm tròn)
+            long amount = total_price.multiply(BigDecimal.valueOf(100)).longValue();
             Map<String, String> vnp_Params = new HashMap<>();
             vnp_Params.put("vnp_Version", vnp_Version);
             vnp_Params.put("vnp_Command", vnp_Command);
@@ -165,12 +166,32 @@ public class PaymentServiceImpl implements PaymentService {
         if (signValue.equals(vnp_SecureHash))
         {
 
-            Order order = orderRepository.findById(Long.valueOf(fields.get("vnp_TxnRef")))
+            String txnRef = fields.get("vnp_TxnRef");
+            if (txnRef == null || txnRef.isEmpty()) {
+                return new PaymentMethodResponse("03", "Invalid transaction reference");
+            }
+            
+            Order order = orderRepository.findById(Long.valueOf(txnRef))
                     .orElseThrow(() -> new OrderExistsException("Order not found"));
+            
+            if (order.getUser() == null) {
+                return new PaymentMethodResponse("05", "Order user not found");
+            }
+            
             Long orderId = order.getId();
-            long vnpAmount = Long.parseLong(fields.get("vnp_Amount")) / 100;
-            boolean checkAmount = order.getTotalPrice().equals(BigDecimal.valueOf(vnpAmount));
-            boolean checkOrderStatus = order.getStatus() == OrderStatus.PENDING;
+            String vnpAmountStr = fields.get("vnp_Amount");
+            if (vnpAmountStr == null || vnpAmountStr.isEmpty()) {
+                return new PaymentMethodResponse("06", "Invalid amount");
+            }
+            
+            long vnpAmountLong = Long.parseLong(vnpAmountStr);
+            BigDecimal vnpAmount = BigDecimal.valueOf(vnpAmountLong).divide(BigDecimal.valueOf(100), 2, java.math.RoundingMode.HALF_UP);
+            if (order.getTotalPrice() == null) {
+                return new PaymentMethodResponse("07", "Order total price is null");
+            }
+            // So sánh BigDecimal bằng compareTo để tránh vấn đề precision
+            boolean checkAmount = order.getTotalPrice().compareTo(vnpAmount) == 0;
+            boolean checkOrderStatus = order.getStatus() == OrderStatus.PENDING_PAYMENT;
 
 
             if(order.getId() != null)
@@ -182,16 +203,31 @@ public class PaymentServiceImpl implements PaymentService {
                         if ("00".equals(request.getParameter("vnp_ResponseCode")))
                         {
                             Users user = order.getUser();
+                            if (user == null) {
+                                throw new PaymentException("User not found for order");
+                            }
                             Long userId = user.getId();
                             order.setStatus(OrderStatus.PAID);
-                            Cart cart = user.getCart();
-                            for(CartItem cartItem : cart.getItems()) {
-                                Product product = cartItem.getProduct();
-                                int updatedRows = productRepository.decreaseStock(product.getId(), cartItem.getQuantity());
-                                if (updatedRows == 0) {
-                                    throw new ProductQuantityValidation("Hết hàng hoặc số lượng không đủ!");
+                            
+                            // Xử lý order items thay vì cart items (vì cart đã bị xóa khi tạo order)
+                            if (order.getOrderItems() == null || order.getOrderItems().isEmpty()) {
+                                throw new PaymentException("Order has no items");
+                            }
+                            
+                            for(OrderItem orderItem : order.getOrderItems()) {
+                                if (orderItem == null || orderItem.getProduct() == null) {
+                                    continue;
                                 }
-                                cartItemService.removeItemOutOfCart(user.getId(), cartItem.getProduct().getId());
+                                Product product = orderItem.getProduct();
+                                Long quantity = orderItem.getQuantity();
+                                if (quantity == null || quantity <= 0) {
+                                    continue;
+                                }
+                                // Giảm stock từ order items
+                                int updatedRows = productRepository.decreaseStock(product.getId(), quantity);
+                                if (updatedRows == 0) {
+                                    throw new ProductQuantityValidation("Hết hàng hoặc số lượng không đủ cho sản phẩm: " + product.getProductName());
+                                }
                             }
                             orderRepository.save(order);
                             String subject = "Confirm the order transaction";
@@ -207,7 +243,11 @@ public class PaymentServiceImpl implements PaymentService {
                                     user.getEmail(), orderId
                             );
                             emailService.sendEmail(user.getEmail(), subject, body);
-                            invoiceService.createInvoice(userId, orderId, order.getPaymentMethod().getId());
+                            if (order.getPaymentMethod() != null) {
+                                invoiceService.createInvoice(userId, orderId, order.getPaymentMethod().getId());
+                            } else {
+                                throw new PaymentException("Payment method not found for order");
+                            }
                         }
                         else
                         {

@@ -89,6 +89,7 @@ public class UserController {
             return ResponseEntity.status(HttpStatus.UNAUTHORIZED).body(responseDTO);
         }
         catch (Exception e) {
+            logger.error("Login faile",e);
             return ResponseEntity.status(HttpStatus.INTERNAL_SERVER_ERROR).build();
         }
     }

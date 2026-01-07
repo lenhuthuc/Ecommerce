@@ -20,7 +20,7 @@ import java.util.List;
 @RequestMapping("/api/orders")
 public class OrderController {
 
-    private Logger logger = LoggerFactory.getLogger(CartController.class);
+    private Logger logger = LoggerFactory.getLogger(OrderController.class);
     @Autowired
     private OrderService orderService;
     @Autowired
@@ -28,7 +28,7 @@ public class OrderController {
     @Autowired
     private UserService userService;
 
-    @GetMapping
+    @GetMapping("/my-orders")
     public ResponseEntity<List<OrderSummaryDTO>> getMyOrders(
             @RequestHeader("Authorization") String token,
             HttpServletRequest request) {

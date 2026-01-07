@@ -10,7 +10,6 @@ import org.springframework.stereotype.Component;
 
 import java.time.ZoneId;
 import java.util.Date;
-import java.util.HashSet;
 import java.util.Set;
 import java.util.stream.Collectors;
 
@@ -18,14 +17,29 @@ import java.util.stream.Collectors;
 public class OrderMapper {
 
     public OrderSummaryDTO toOrderSummaryDTO(Order order, String paymentUrl) {
+        if (order == null) {
+            return null;
+        }
+        
         OrderSummaryDTO orderSummaryDTO = new OrderSummaryDTO();
         orderSummaryDTO.setId(order.getId());
         orderSummaryDTO.setCreateAt(order.getCreateAt());
-        orderSummaryDTO.setStatus(order.getStatus().name());
+        // Xử lý an toàn cho status - có thể null hoặc invalid
+        if (order.getStatus() != null) {
+            orderSummaryDTO.setStatus(order.getStatus().name());
+        } else {
+            orderSummaryDTO.setStatus("UNKNOWN");
+        }
         orderSummaryDTO.setTotalPrice(order.getTotalPrice());
-        orderSummaryDTO.setPaymentMethodName(order.getPaymentMethod().getMethodName());
+        orderSummaryDTO.setPaymentMethodName(order.getPaymentMethod() != null ? order.getPaymentMethod().getMethodName() : null);
         orderSummaryDTO.setPaymentUrl(paymentUrl);
-        orderSummaryDTO.setTotalItems(order.getOrderItems() == null ? 0 : order.getOrderItems().size());
+        // Xử lý an toàn cho orderItems - tránh lazy loading exception
+        try {
+            orderSummaryDTO.setTotalItems(order.getOrderItems() == null ? 0 : order.getOrderItems().size());
+        } catch (Exception e) {
+            // Nếu không thể load orderItems (lazy loading issue), set về 0
+            orderSummaryDTO.setTotalItems(0);
+        }
 
         return orderSummaryDTO;
     }
@@ -60,6 +74,7 @@ public class OrderMapper {
         }
         CartItemDetailsResponseDTO dto = new CartItemDetailsResponseDTO();
         if (orderItem.getProduct() != null) {
+            dto.setProductId(orderItem.getProduct().getId());
             dto.setProductName(orderItem.getProduct().getProductName());
         }
         dto.setPrice(orderItem.getPrice());

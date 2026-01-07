@@ -26,14 +26,19 @@ public class InvoiceItemServiceImpl implements InvoiceItemService {
     @Override
     public InvoiceItem makeInvoiceItem(Long orderItemId, Long invoiceId) {
         OrderItem orderItem = orderItemRepository.findById(orderItemId)
-                .orElseThrow(() -> new OrderExistsException("Order not found"));
+                .orElseThrow(() -> new OrderExistsException("Order item not found"));
         Invoice invoice = invoiceRepository.findById(invoiceId)
                 .orElseThrow(() -> new InvoiceException("Invoice not found"));
+        
+        if (orderItem.getProduct() == null) {
+            throw new OrderExistsException("Product not found in order item");
+        }
+        
         InvoiceItem invoiceItem = new InvoiceItem();
         InvoiceItemId id = new InvoiceItemId(invoiceId, orderItem.getProduct().getId());
         invoiceItem.setId(id);
         invoiceItem.setInvoice(invoice);
-        invoiceItem.setInvoice(invoice);
+        invoiceItem.setProduct(orderItem.getProduct()); // Gán Product cho InvoiceItem
         invoiceItem.setPrice(orderItem.getPrice());
         invoiceItem.setQuantity(orderItem.getQuantity());
         invoiceItem.setTotal(orderItem.getPrice().multiply(BigDecimal.valueOf(orderItem.getQuantity())));

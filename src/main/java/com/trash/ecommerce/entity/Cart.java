@@ -1,5 +1,6 @@
 package com.trash.ecommerce.entity;
 
+import java.util.HashSet;
 import java.util.Set;
 
 import jakarta.persistence.CascadeType;
@@ -31,5 +32,5 @@ public class Cart {
     private Users user;
 
     @OneToMany(mappedBy = "cart", cascade = CascadeType.ALL)
-    private Set<CartItem> items;
+    private Set<CartItem> items = new HashSet<>();
 }

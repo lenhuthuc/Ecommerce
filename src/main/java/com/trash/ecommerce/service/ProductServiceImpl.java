@@ -6,6 +6,7 @@ import java.nio.file.Files;
 import java.nio.file.Path;
 import java.nio.file.Paths;
 import java.nio.file.StandardCopyOption;
+import java.util.HashSet;
 import java.util.List;
 import java.util.UUID;
 
@@ -66,6 +67,9 @@ public class ProductServiceImpl implements ProductService {
 
     @Override
     public List<ProductDetailsResponseDTO> findProductByName(String name, int noPage, int sizePage) {
+        if (name == null || name.trim().isEmpty()) {
+            throw new IllegalArgumentException("Product name cannot be null or empty");
+        }
         PageRequest pageRequest = PageRequest.of(noPage, sizePage);
         Page<Product> products = productRepository.findProductsByName(name, pageRequest);
         List<ProductDetailsResponseDTO> productDetailsResponseDTO = products.getContent()
@@ -77,11 +81,20 @@ public class ProductServiceImpl implements ProductService {
 
     @Override
     public ProductResponseDTO createProduct(ProductRequestDTO productRequestDTO, MultipartFile file) throws IOException {
+        if (file == null || file.isEmpty()) {
+            throw new IllegalArgumentException("File is required");
+        }
+        
         Product product = new Product();
-        String fileResource = UUID.randomUUID() + "_" + file.getOriginalFilename();
-        product.setImgName(file.getOriginalFilename());
+        String originalFilename = file.getOriginalFilename();
+        if (originalFilename == null || originalFilename.isEmpty()) {
+            throw new IllegalArgumentException("File name is required");
+        }
+        
+        String fileResource = UUID.randomUUID() + "_" + originalFilename;
+        product.setImgName(originalFilename);
         Path path = Paths.get("uploads/" + fileResource);
-        Files.copy(file.getInputStream(),path);
+        Files.copy(file.getInputStream(), path);
         product.setImgData(fileResource);
         product.setPrice(productRequestDTO.getPrice());
         product.setProductName(productRequestDTO.getProductName());
@@ -96,22 +109,28 @@ public class ProductServiceImpl implements ProductService {
         Product product = productRepository.findById(id).orElseThrow(
             () -> new ProductFingdingException("Product is not found")
         );
-        if (!file.isEmpty()) {
+        if (file != null && !file.isEmpty()) {
             String oldImgPath = product.getImgData();
-            if (oldImgPath != null) {
-                File oldFile = new File(oldImgPath);
+            if (oldImgPath != null && !oldImgPath.isEmpty()) {
+                Path oldFilePath = Paths.get("uploads/" + oldImgPath);
+                File oldFile = oldFilePath.toFile();
                 if (oldFile.exists()) {
                     oldFile.delete();
                 }
             }
 
-            String filename = UUID.randomUUID() + "_" + file.getOriginalFilename();
+            String originalFilename = file.getOriginalFilename();
+            if (originalFilename == null || originalFilename.isEmpty()) {
+                throw new IllegalArgumentException("File name is required");
+            }
+            
+            String filename = UUID.randomUUID() + "_" + originalFilename;
 
             Path uploadPath = Paths.get("uploads/" + filename);
             Files.copy(file.getInputStream(), uploadPath, StandardCopyOption.REPLACE_EXISTING);
 
-            product.setImgName(file.getOriginalFilename());
-            product.setImgData(uploadPath.toString());
+            product.setImgName(originalFilename);
+            product.setImgData(filename);
         }
         if (productRequestDTO.getPrice() != null) {
             product.setPrice(productRequestDTO.getPrice());
@@ -132,8 +151,12 @@ public class ProductServiceImpl implements ProductService {
         Product product = productRepository.findById(id).orElseThrow(
             () -> new ProductFingdingException("Product is not found")
         );
-        for(CartItem cartItem : product.getCartItems())  {
-            cartItem.setProduct(null);
+        if (product.getCartItems() != null) {
+            for(CartItem cartItem : product.getCartItems())  {
+                if (cartItem != null) {
+                    cartItem.setProduct(null);
+                }
+            }
         }
         productRepository.delete(product);
         return new ProductResponseDTO("successful");
@@ -141,11 +164,23 @@ public class ProductServiceImpl implements ProductService {
 
     @Override
     public ProductResponseDTO addToCart(String token, Long productId, Long quantity) {
+        if (quantity == null || quantity <= 0) {
+            throw new IllegalArgumentException("Quantity must be greater than 0");
+        }
+        
         Long userId = jwtService.extractId(token);
         Users users = userRepository.findById(userId)
                                         .orElseThrow(() -> new FindingUserError("user is not found"));
         Cart cart = users.getCart();
+        if (cart == null) {
+            throw new FindingUserError("Cart not found for user");
+        }
+        
         Long cartId = cart.getId();
+        if (cartId == null) {
+            throw new FindingUserError("Cart ID is null");
+        }
+        
         Product product = productRepository.findById(productId)
                                         .orElseThrow(() -> new ProductFingdingException("product can't be found"));
         CartItemId cartItemId = new CartItemId(cartId, productId);
@@ -153,8 +188,16 @@ public class ProductServiceImpl implements ProductService {
         cartItem.setId(cartItemId);
         cartItem.setCart(cart);
         cartItem.setProduct(product);
-        cartItem.setQuantity(quantity); 
+        cartItem.setQuantity(quantity);
+        
+        if (product.getCartItems() == null) {
+            product.setCartItems(new HashSet<>());
+        }
         product.getCartItems().add(cartItem);
+        
+        if (cart.getItems() == null) {
+            cart.setItems(new HashSet<>());
+        }
         cart.getItems().add(cartItem);
         return new ProductResponseDTO("Them san pham vao gio hang thanh cong !");
     }
@@ -163,7 +206,11 @@ public class ProductServiceImpl implements ProductService {
     public String getImgProduct(Long productId) {
         Product product = productRepository.findById(productId)
                 .orElseThrow(() -> new ProductFingdingException("Product not found"));
-        return product.getImgData();
+        String imgData = product.getImgData();
+        if (imgData == null || imgData.isEmpty()) {
+            throw new ProductFingdingException("Product image not found");
+        }
+        return imgData;
     }
 
 }
