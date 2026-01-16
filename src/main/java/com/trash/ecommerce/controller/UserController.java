@@ -167,4 +167,63 @@ public class UserController {
 
     }
 
+    @PostMapping("auth/reset-password")
+    public ResponseEntity<UserResponseDTO> resetPassword(
+            @RequestParam String email
+    ) {
+        try {
+            UserResponseDTO response = userService.resetPassword(email);
+            return ResponseEntity.ok(response);
+        } catch (Exception e) {
+            logger.error("Reset password failed", e);
+            return ResponseEntity.status(HttpStatus.INTERNAL_SERVER_ERROR)
+                    .body(new UserResponseDTO(e.getMessage()));
+        }
+    }
+
+    @PostMapping("auth/verify-otp")
+    public ResponseEntity<UserResponseDTO> verifyOTP(
+            @RequestParam String email,
+            @RequestParam String otp
+    ) {
+        try {
+            boolean isValid = userService.verifyDTO(email, otp);
+            if (isValid) {
+                return ResponseEntity.ok(new UserResponseDTO("OTP verified successfully"));
+            } else {
+                return ResponseEntity.status(HttpStatus.UNAUTHORIZED)
+                        .body(new UserResponseDTO("Invalid or expired OTP"));
+            }
+        } catch (Exception e) {
+            logger.error("OTP verification failed", e);
+            return ResponseEntity.status(HttpStatus.INTERNAL_SERVER_ERROR)
+                    .body(new UserResponseDTO(e.getMessage()));
+        }
+    }
+
+    @PostMapping("auth/change-password")
+    public ResponseEntity<UserResponseDTO> changePassword(
+            @RequestParam String email,
+            @RequestParam String newPassword,
+            @RequestParam(required = false) String otp
+    ) {
+        try {
+            // Verify OTP before changing password
+            if (otp != null && !otp.isEmpty()) {
+                boolean isValid = userService.verifyDTO(email, otp);
+                if (!isValid) {
+                    return ResponseEntity.status(HttpStatus.UNAUTHORIZED)
+                            .body(new UserResponseDTO("Invalid or expired OTP"));
+                }
+            }
+            
+            UserResponseDTO response = userService.changePassword(email, newPassword);
+            return ResponseEntity.ok(response);
+        } catch (Exception e) {
+            logger.error("Change password failed", e);
+            return ResponseEntity.status(HttpStatus.INTERNAL_SERVER_ERROR)
+                    .body(new UserResponseDTO(e.getMessage()));
+        }
+    }
+
 }

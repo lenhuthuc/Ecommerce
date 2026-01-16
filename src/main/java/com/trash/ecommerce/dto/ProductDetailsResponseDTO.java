@@ -15,4 +15,9 @@ public class ProductDetailsResponseDTO {
     private String product_name;
     private BigDecimal price;
     private Long quantity;
+    private String category;
+    private String description;
+    private String image;
+    private Integer ratingCount;
 }
+

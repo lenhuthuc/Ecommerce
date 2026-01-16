@@ -31,20 +31,26 @@ public class Product {
     @Column(name = "id")
     private Long id;
 
-    @Column(name = "img_name")
-    private String imgName;
-
-    @Column(name = "img_data")
-    private String imgData;
-
-    @Column(nullable = false)
+    @Column(nullable = false, length = 500)
     private String productName;
 
     @Column(name = "price",nullable = false, precision = 12, scale = 2)
     private BigDecimal price;
 
+    @Column(length = 255)
+    private String category;
+
+    @Column(length = 1000)
+    private String image;
+
+    @Column(columnDefinition = "TEXT")
+    private String description;
+
+    @Column(name = "rating_count")
+    private Integer ratingCount = 0;
+
     @Column(name = "quantity", nullable = false)
-    private Long quantity;
+    private Long quantity = 100L;
 
     @OneToMany(
     fetch = FetchType.LAZY,
@@ -70,4 +76,11 @@ public class Product {
         mappedBy = "product"
     )
     private Set<OrderItem> orderItems = new HashSet<>();
+
+    @OneToMany(
+        fetch = FetchType.LAZY,
+        cascade = CascadeType.ALL,
+        mappedBy = "product"
+    )
+    private Set<UserInteractions> userInteractions = new HashSet<>();
 }

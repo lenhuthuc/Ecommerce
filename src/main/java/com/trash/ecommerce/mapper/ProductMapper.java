@@ -19,6 +19,10 @@ public class ProductMapper {
         productDTO.setProduct_name(product.getProductName());
         productDTO.setQuantity(product.getQuantity());
         productDTO.setPrice(product.getPrice());
+        productDTO.setCategory(product.getCategory());
+        productDTO.setDescription(product.getDescription());
+        productDTO.setImage(product.getImage());
+        productDTO.setRatingCount(product.getRatingCount());
         return productDTO;
     }
 }

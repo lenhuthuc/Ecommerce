@@ -92,13 +92,14 @@ public class ProductServiceImpl implements ProductService {
         }
         
         String fileResource = UUID.randomUUID() + "_" + originalFilename;
-        product.setImgName(originalFilename);
         Path path = Paths.get("uploads/" + fileResource);
         Files.copy(file.getInputStream(), path);
-        product.setImgData(fileResource);
+        product.setImage(fileResource);
         product.setPrice(productRequestDTO.getPrice());
         product.setProductName(productRequestDTO.getProductName());
         product.setQuantity(productRequestDTO.getQuantity());
+        product.setCategory(productRequestDTO.getCategory());
+        product.setDescription(productRequestDTO.getDescription());
         productRepository.save(product);
         return new ProductResponseDTO("creating product is successful");
     }
@@ -110,7 +111,7 @@ public class ProductServiceImpl implements ProductService {
             () -> new ProductFingdingException("Product is not found")
         );
         if (file != null && !file.isEmpty()) {
-            String oldImgPath = product.getImgData();
+            String oldImgPath = product.getImage();
             if (oldImgPath != null && !oldImgPath.isEmpty()) {
                 Path oldFilePath = Paths.get("uploads/" + oldImgPath);
                 File oldFile = oldFilePath.toFile();
@@ -129,8 +130,7 @@ public class ProductServiceImpl implements ProductService {
             Path uploadPath = Paths.get("uploads/" + filename);
             Files.copy(file.getInputStream(), uploadPath, StandardCopyOption.REPLACE_EXISTING);
 
-            product.setImgName(originalFilename);
-            product.setImgData(filename);
+            product.setImage(filename);
         }
         if (productRequestDTO.getPrice() != null) {
             product.setPrice(productRequestDTO.getPrice());
@@ -140,6 +140,12 @@ public class ProductServiceImpl implements ProductService {
         }
         if (productRequestDTO.getQuantity() != null) {
             product.setQuantity(productRequestDTO.getQuantity());
+        }
+        if (productRequestDTO.getCategory() != null) {
+            product.setCategory(productRequestDTO.getCategory());
+        }
+        if (productRequestDTO.getDescription() != null) {
+            product.setDescription(productRequestDTO.getDescription());
         }
         productRepository.save(product);
         return new ProductResponseDTO("Update product is successful");
@@ -206,7 +212,7 @@ public class ProductServiceImpl implements ProductService {
     public String getImgProduct(Long productId) {
         Product product = productRepository.findById(productId)
                 .orElseThrow(() -> new ProductFingdingException("Product not found"));
-        String imgData = product.getImgData();
+        String imgData = product.getImage();
         if (imgData == null || imgData.isEmpty()) {
             throw new ProductFingdingException("Product image not found");
         }

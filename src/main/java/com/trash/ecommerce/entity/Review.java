@@ -1,7 +1,6 @@
 package com.trash.ecommerce.entity;
 
 import com.fasterxml.jackson.annotation.JsonIgnore;
-import com.trash.ecommerce.dto.Rating;
 import jakarta.persistence.CascadeType;
 import jakarta.persistence.Column;
 import jakarta.persistence.Entity;
@@ -27,8 +26,8 @@ public class Review {
     @Column(name = "id")
     private Long id;
     @Column(name = "rating", nullable = false)
-    private Rating rating;
-    @Column(name = "content")
+    private Integer rating;
+    @Column(name = "content", length = 255)
     private String content;
     @ManyToOne(fetch = FetchType.LAZY)
     @JoinColumn(name = "user_id")

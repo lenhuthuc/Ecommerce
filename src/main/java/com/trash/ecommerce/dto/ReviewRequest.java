@@ -8,6 +8,6 @@ import lombok.NoArgsConstructor;
 @NoArgsConstructor
 @Data
 public class ReviewRequest {
-    private Rating rate;
-    private String comment;
+    private Integer rating;
+    private String content;
 }

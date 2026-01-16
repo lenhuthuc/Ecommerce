@@ -91,6 +91,14 @@ public class Users implements UserDetails {
         cascade = CascadeType.ALL
     )
     private Set<Order> orders = new HashSet<>();
+
+    @OneToMany(
+        fetch = FetchType.LAZY,
+        mappedBy = "user",
+        cascade = CascadeType.ALL
+    )
+    private Set<UserInteractions> userInteractions = new HashSet<>();
+
     @Override
     public Collection<? extends GrantedAuthority> getAuthorities() {
        return roles.stream()

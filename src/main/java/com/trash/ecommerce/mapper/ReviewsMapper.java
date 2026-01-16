@@ -24,8 +24,8 @@ public class ReviewsMapper {
 
     public Review mapReviewDTO (ReviewRequest review) {
         Review review1 = new Review();
-        review1.setRating(review.getRate());
-        review1.setContent(review.getComment());
+        review1.setRating(review.getRating());
+        review1.setContent(review.getContent());
         return review1;
     }
 }
